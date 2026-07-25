@@ -1,9 +1,77 @@
-import React from 'react'
+"use client"
+
+import Image from 'next/image'
+import { motion, useReducedMotion } from 'framer-motion'
+import { ChevronDown } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { NAVBAR_HEIGHT } from '@/lib/constants'
 
 const HeroSection = () => {
-  return (
-    <div>HeroSection</div>
-  )
+    const shouldReduceMotion = useReducedMotion()
+
+    const handleSearch = () => {
+        // TODO: wire up actual search logic (e.g. router push with query param)
+    }
+
+    return (
+        <div
+            className='relative w-full'
+            style={{ height: `calc(100vh - ${NAVBAR_HEIGHT}px)` }}
+        >
+            <Image
+                src='/landing-splash.jpg'
+                alt='Rentiful Rental Platform Hero Section'
+                fill
+                sizes="100vw"
+                className='object-cover object-center'
+                priority
+            />
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-black/40" />
+
+            <motion.div
+                initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.8 }}
+                className='absolute top-1/3 -translate-y-1/2 text-center w-full px-4'
+            >
+                <div className="max-w-4xl mx-auto px-6 sm:px-12">
+                    <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight [text-shadow:_0_2px_12px_rgba(0,0,0,0.4)]">
+                        Start your journey to finding the perfect place to call home
+                    </h1>
+                    <p className="text-lg sm:text-xl text-white/90 mb-8 [text-shadow:_0_1px_8px_rgba(0,0,0,0.3)]">
+                        Explore our wide range of properties tailored to fit your lifestyle and needs!
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row justify-center max-w-lg mx-auto rounded-xl sm:rounded-none shadow-lg sm:shadow-none transition-shadow duration-300 hover:shadow-xl">
+                        <Input
+                            type='text'
+                            placeholder='Search by city, neighborhood or address'
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSearch()
+                            }}
+                            className='w-full rounded-xl sm:rounded-none sm:rounded-l-xl border-none bg-white h-12 focus-visible:ring-2 focus-visible:ring-secondary-500'
+                        />
+                        <Button
+                            onClick={handleSearch}
+                            className="bg-secondary-500 text-white rounded-xl sm:rounded-none sm:rounded-r-xl border-none hover:bg-secondary-600 transition-colors duration-300 h-12 mt-2 sm:mt-0"
+                        >
+                            Search
+                        </Button>
+                    </div>
+                </div>
+            </motion.div>
+
+            <motion.div
+                animate={shouldReduceMotion ? {} : { y: [0, 8, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5 }}
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/80"
+            >
+                <ChevronDown size={28} />
+            </motion.div>
+        </div>
+    )
 }
 
 export default HeroSection
