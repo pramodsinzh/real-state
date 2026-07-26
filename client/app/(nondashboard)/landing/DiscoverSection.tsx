@@ -24,7 +24,7 @@ const DiscoverSection = () => {
             id="discover-section"
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.8 }}
+            viewport={{ once: true, amount: 0.2 }}
             variants={containerVariants}
             className='py-12 mb-16 bg-white'
         >
