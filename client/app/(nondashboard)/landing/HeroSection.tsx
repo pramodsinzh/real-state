@@ -63,13 +63,17 @@ const HeroSection = () => {
                 </div>
             </motion.div>
 
-            <motion.div
+            <motion.button
+                onClick={() => {
+                    document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' })
+                }}
                 animate={shouldReduceMotion ? {} : { y: [0, 8, 0] }}
                 transition={{ repeat: Infinity, duration: 1.5 }}
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/80"
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/80 hover:text-white transition-colors duration-300 cursor-pointer"
+                aria-label="Scroll to features section"
             >
                 <ChevronDown size={28} />
-            </motion.div>
+            </motion.button>
         </div>
     )
 }
