@@ -1,0 +1,186 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  // The `url` property is no longer supported in schema files.
+  // Move connection URLs for Migrate to `prisma.config.ts` and pass either
+  // `adapter` for a direct database connection or `accelerateUrl` for
+  // Accelerate to the `PrismaClient` constructor.
+  // See: https://pris.ly/d/config-datasource
+  // Pinning a version is optional but recommended for reproducible migrations.
+  // Remove the version pin if your Postgres instance ships a different PostGIS version.
+  extensions = [postgis]
+}
+
+enum Highlight {
+  HighSpeedInternetAccess
+  WasherDryer
+  AirConditioning
+  Heating
+  SmokeFree
+  CableReady
+  SatelliteTV
+  DoubleVanities
+  TubShower
+  Intercom
+  SprinklerSystem
+  RecentlyRenovated
+  CloseToTransit
+  GreatView
+  QuietNeighborhood
+}
+
+enum Amenity {
+  WasherDryer
+  AirConditioning
+  Dishwasher
+  HighSpeedInternet
+  HardwoodFloors
+  WalkInClosets
+  Microwave
+  Refrigerator
+  Pool
+  Gym
+  Parking
+  PetsAllowed
+  WiFi
+}
+
+enum PropertyType {
+  Rooms
+  Tinyhouse
+  Apartment
+  Villa
+  Townhouse
+  Cottage
+}
+
+enum ApplicationStatus {
+  Pending
+  Denied
+  Approved
+}
+
+enum PaymentStatus {
+  Pending
+  Paid
+  PartiallyPaid
+  Overdue
+}
+
+model Property {
+  id                Int          @id @default(autoincrement())
+  name              String
+  description       String
+  pricePerMonth     Float
+  securityDeposit   Float
+  applicationFee    Float
+  photoUrls         String[]
+  amenities         Amenity[]
+  highlights        Highlight[]
+  isPetsAllowed     Boolean      @default(false)
+  isParkingIncluded Boolean      @default(false)
+  beds              Int
+  baths             Float
+  squareFeet        Int
+  propertyType      PropertyType
+  postedDate        DateTime     @default(now())
+  averageRating     Float?       @default(0)
+  numberOfReviews   Int?         @default(0)
+  locationId        Int
+  managerCognitoId  String
+
+  location     Location      @relation(fields: [locationId], references: [id])
+  manager      Manager       @relation(fields: [managerCognitoId], references: [cognitoId])
+  leases       Lease[]
+  applications Application[]
+  favoritedBy  Tenant[]      @relation("TenantFavorites")
+  tenants      Tenant[]      @relation("TenantProperties")
+}
+
+model Manager {
+  id          Int    @id @default(autoincrement())
+  cognitoId   String @unique
+  name        String
+  email       String
+  phoneNumber String
+
+  managedProperties Property[]
+}
+
+model Tenant {
+  id          Int    @id @default(autoincrement())
+  cognitoId   String @unique
+  name        String
+  email       String
+  phoneNumber String
+
+  properties   Property[]    @relation("TenantProperties")
+  favorites    Property[]    @relation("TenantFavorites")
+  applications Application[]
+  leases       Lease[]
+}
+
+model Location {
+  id          Int    @id @default(autoincrement())
+  address     String
+  city        String
+  state       String
+  country     String
+  postalCode  String
+  // Unsupported types cannot be written via Prisma Client directly.
+  // Insert the row first, then set this column with a raw query, e.g.:
+  //   UPDATE "Location" SET coordinates = ST_SetSRID(ST_MakePoint($lng, $lat), 4326) WHERE id = $id;
+  // A spatial (GiST) index also can't be declared here — add it in a manual migration:
+  //   CREATE INDEX location_coordinates_idx ON "Location" USING GIST (coordinates);
+  coordinates Unsupported("geography(Point, 4326)")
+
+  properties Property[]
+}
+
+model Application {
+  id              Int               @id @default(autoincrement())
+  applicationDate DateTime
+  status          ApplicationStatus
+  propertyId      Int
+  tenantCognitoId String
+  name            String
+  email           String
+  phoneNumber     String
+  message         String?
+  leaseId         Int?              @unique
+
+  property Property @relation(fields: [propertyId], references: [id])
+  tenant   Tenant   @relation(fields: [tenantCognitoId], references: [cognitoId])
+  lease    Lease?   @relation(fields: [leaseId], references: [id])
+}
+
+model Lease {
+  id              Int      @id @default(autoincrement())
+  startDate       DateTime
+  endDate         DateTime
+  rent            Float
+  deposit         Float
+  propertyId      Int
+  tenantCognitoId String
+
+  property    Property     @relation(fields: [propertyId], references: [id])
+  tenant      Tenant       @relation(fields: [tenantCognitoId], references: [cognitoId])
+  application Application?
+  payments    Payment[]
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  amountDue     Float
+  amountPaid    Float
+  dueDate       DateTime
+  paymentDate   DateTime
+  paymentStatus PaymentStatus
+  leaseId       Int
+
+  lease Lease @relation(fields: [leaseId], references: [id])
+}
