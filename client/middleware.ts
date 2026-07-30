@@ -1,5 +1,8 @@
-import { auth } from "@/auth"
+import NextAuth from "next-auth"
+import authConfig from "@/auth.config"
 import { NextResponse } from "next/server"
+
+const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
@@ -9,25 +12,21 @@ export default auth((req) => {
 
   const isAuthRoute = pathname === "/login" || pathname === "/register"
 
-  // Not logged in -> block protected trees, allow auth pages
   if (!isLoggedIn) {
     if (isAuthRoute) return NextResponse.next()
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  // Logged in but hasn't picked a role yet (Google sign-up) -> force onboarding
   if (!role && pathname !== "/onboarding") {
     return NextResponse.redirect(new URL("/onboarding", req.url))
   }
 
-  // Already onboarded users shouldn't sit on /onboarding or auth pages
   if (role && (pathname === "/onboarding" || isAuthRoute)) {
     return NextResponse.redirect(
       new URL(role === "landlord" ? "/landlord/dashboard" : "/tenant/dashboard", req.url)
     )
   }
 
-  // Enforce separate trees by role
   if (pathname.startsWith("/landlord") && role !== "landlord") {
     return NextResponse.redirect(new URL("/tenant/dashboard", req.url))
   }
