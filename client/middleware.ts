@@ -10,11 +10,11 @@ export default auth((req) => {
   const isLoggedIn = !!session?.user
   const role = session?.user?.role
 
-  const isAuthRoute = pathname === "/login" || pathname === "/register"
+  const isAuthRoute = pathname === "/signin" || pathname === "/signup"
 
   if (!isLoggedIn) {
     if (isAuthRoute) return NextResponse.next()
-    return NextResponse.redirect(new URL("/login", req.url))
+    return NextResponse.redirect(new URL("/signin", req.url))
   }
 
   if (!role && pathname !== "/onboarding") {
@@ -23,15 +23,15 @@ export default auth((req) => {
 
   if (role && (pathname === "/onboarding" || isAuthRoute)) {
     return NextResponse.redirect(
-      new URL(role === "landlord" ? "/landlord/dashboard" : "/tenant/dashboard", req.url)
+      new URL(role === "manager" ? "/manager/dashboard" : "/tenants/dashboard", req.url)
     )
   }
 
-  if (pathname.startsWith("/landlord") && role !== "landlord") {
-    return NextResponse.redirect(new URL("/tenant/dashboard", req.url))
+  if (pathname.startsWith("/manager") && role !== "manager") {
+    return NextResponse.redirect(new URL("/tenants/dashboard", req.url))
   }
-  if (pathname.startsWith("/tenant") && role !== "tenant") {
-    return NextResponse.redirect(new URL("/landlord/dashboard", req.url))
+  if (pathname.startsWith("/tenants") && role !== "tenant") {
+    return NextResponse.redirect(new URL("/manager/dashboard", req.url))
   }
 
   return NextResponse.next()
@@ -39,10 +39,10 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/landlord/:path*",
-    "/tenant/:path*",
+    "/manager/:path*",
+    "/tenants/:path*",
     "/onboarding",
-    "/login",
-    "/register",
+    "/signin",
+    "/signup",
   ],
 }

@@ -14,14 +14,12 @@ export default {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      // no authorize() here — this config is only used by middleware
-      // for reading the session token, never for actually signing in
       authorize: async () => null,
     }),
   ],
   session: { strategy: "jwt" },
   pages: {
-    signIn: "/login",
+    signIn: "/signin",
   },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
