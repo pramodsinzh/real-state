@@ -10,7 +10,7 @@ export default function OnboardingPage() {
   const [phoneNumber, setPhoneNumber] = useState("")
   const [error, setError] = useState("")
 
-  async function handleSelect(role: "tenant" | "landlord") {
+  async function handleSelect(role: "tenant" | "manager") {
     if (!phoneNumber) {
       setError("Phone number is required")
       return
@@ -28,7 +28,7 @@ export default function OnboardingPage() {
     }
 
     await update({ role })
-    router.push(role === "landlord" ? "/landlord/dashboard" : "/tenant/dashboard")
+    router.push(role === "manager" ? "/manager/dashboard" : "/tenants/dashboard")
   }
 
   return (
@@ -42,8 +42,8 @@ export default function OnboardingPage() {
         required
       />
       {error && <p>{error}</p>}
-      <button onClick={() => handleSelect("tenant")}>I'm looking for a rental</button>
-      <button onClick={() => handleSelect("landlord")}>I'm listing a property</button>
+      <button onClick={() => handleSelect("tenant")}>I&apos;m looking for a rental</button>
+      <button onClick={() => handleSelect("manager")}>I&apos;m listing a property</button>
     </div>
   )
 }

@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   }
 
   const { role, phoneNumber } = await req.json()
-  if (!["tenant", "landlord"].includes(role) || !phoneNumber) {
+  if (!["tenant", "manager"].includes(role) || !phoneNumber) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 })
   }
 
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     data: { role },
   })
 
-  if (role === "landlord") {
+  if (role === "manager") {
     await prisma.manager.create({
       data: { cognitoId: user.id, name: user.name ?? "", email: user.email ?? "", phoneNumber },
     })
