@@ -7,7 +7,8 @@ import morgan from "morgan";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 
 /* ROUTE IMPORT */
-import router from "./routes/tenantRoutes.js";
+import tenantRouters from "./routes/tenantRoutes.js";
+import managerRouters from "./routes/managerRoutes.js";
 
 /* CONFIGURATIONS */
 dotenv.config();
@@ -25,7 +26,8 @@ app.get("/", (req, res) => {
   res.send("This is home route");
 });
 
-app.use("/tenants", authMiddleware(["tenant"]), router)
+app.use("/tenants", authMiddleware(["tenant"]), tenantRouters)
+app.use("/managers", authMiddleware(["manager"]), managerRouters)
 
 
 
