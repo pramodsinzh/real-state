@@ -83,7 +83,7 @@ export default function SignUpPage() {
       redirect: false,
     })
 
-    router.push(form.role === "manager" ? "/manager/dashboard" : "/tenants/dashboard")
+    router.push("/landing")
   }
 
   return (

@@ -11,6 +11,11 @@ export default auth((req) => {
   const role = session?.user?.role
 
   const isAuthRoute = pathname === "/signin" || pathname === "/signup"
+  const isPublicRoute = pathname === "/" || pathname === "/landing"
+
+  if (isPublicRoute && !isLoggedIn) {
+    return NextResponse.next()
+  }
 
   if (!isLoggedIn) {
     if (isAuthRoute) return NextResponse.next()
@@ -22,9 +27,7 @@ export default auth((req) => {
   }
 
   if (role && (pathname === "/onboarding" || isAuthRoute)) {
-    return NextResponse.redirect(
-      new URL(role === "manager" ? "/manager/dashboard" : "/tenants/dashboard", req.url)
-    )
+    return NextResponse.redirect(new URL("/landing", req.url))
   }
 
   if (pathname.startsWith("/manager") && role !== "manager") {
@@ -39,6 +42,8 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
+    "/",
+    "/landing",
     "/manager/:path*",
     "/tenants/:path*",
     "/onboarding",

@@ -28,7 +28,7 @@ export default function OnboardingPage() {
     }
 
     await update({ role })
-    router.push(role === "manager" ? "/manager/dashboard" : "/tenants/dashboard")
+   router.push("/landing")
   }
 
   return (

@@ -1,20 +1,37 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/auth/password-input"
 import { AuthLogo } from "@/components/auth/auth-logo"
 import { signInSchema } from "@/lib/validations/auth"
-import { PasswordInput } from "@/components/auth/password-input"
 
 type FieldErrors = Partial<Record<"email" | "password", string>>
 
-export default function SignInPage() {
+function getOAuthErrorMessage(error: string | null): string {
+  switch (error) {
+    case "OAuthAccountNotLinked":
+      return "An account already exists with this email. Please sign in with your password instead."
+    case "AccessDenied":
+      return "Access denied. Please try again or contact support."
+    case "OAuthSignin":
+    case "OAuthCallback":
+      return "Something went wrong signing in with Google. Please try again."
+    default:
+      return ""
+  }
+}
+
+function SignInForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const oauthError = getOAuthErrorMessage(searchParams.get("error"))
+
   const [form, setForm] = useState({ email: "", password: "" })
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState("")
@@ -22,12 +39,10 @@ export default function SignInPage() {
 
   function validateField(field: keyof typeof form, value: string) {
     const result = signInSchema.safeParse({ ...form, [field]: value })
-
     if (result.success) {
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }))
       return
     }
-
     const issue = result.error.issues.find((i) => i.path[0] === field)
     setFieldErrors((prev) => ({ ...prev, [field]: issue?.message }))
   }
@@ -56,13 +71,11 @@ export default function SignInPage() {
     }
 
     setLoading(true)
-
     const res = await signIn("credentials", {
       email: form.email,
       password: form.password,
       redirect: false,
     })
-
     setLoading(false)
 
     if (res?.error) {
@@ -70,7 +83,7 @@ export default function SignInPage() {
       return
     }
 
-    router.push("/onboarding")
+    router.push("/landing")
   }
 
   return (
@@ -85,6 +98,12 @@ export default function SignInPage() {
             <span className="font-semibold text-gray-900">Welcome back.</span>{" "}
             Sign in to continue
           </p>
+
+          {oauthError && (
+            <div className="mb-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+              <p className="text-sm text-red-600">{oauthError}</p>
+            </div>
+          )}
 
           <form onSubmit={handleCredentialsLogin} className="space-y-4" noValidate>
             <div className="space-y-1.5">
@@ -165,5 +184,13 @@ export default function SignInPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInForm />
+    </Suspense>
   )
 }
