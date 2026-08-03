@@ -8,14 +8,16 @@ export interface AuthenticatedRequest extends Request {
   }
 }
 
-const JWT_SECRET = process.env.JWT_SECRET as string
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not set in environment variables")
-}
-
 export const authMiddleware = (allowedRoles: ("tenant" | "manager")[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    const JWT_SECRET = process.env.JWT_SECRET
+
+    if (!JWT_SECRET) {
+      console.error("JWT_SECRET is not set in environment variables")
+      res.status(500).json({ message: "Server misconfiguration" })
+      return
+    }
+
     const authHeader = req.headers.authorization
 
     if (!authHeader?.startsWith("Bearer ")) {
