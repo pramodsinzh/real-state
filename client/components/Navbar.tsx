@@ -128,14 +128,14 @@ const Navbar = () => {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-primary-200" />
                   <DropdownMenuItem
-                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100 font-bold"
+                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100 "
                     onClick={() => router.push(settingsPath, { scroll: false })}
                   >
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-primary-200" />
                   <DropdownMenuItem
-                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100 font-bold"
+                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100 "
                     onClick={handleSignOut}
                   >
                     Sign Out
