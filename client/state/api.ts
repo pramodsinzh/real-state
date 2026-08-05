@@ -1,6 +1,6 @@
+import { Manager, Tenant } from "@/types/prismaTypes"
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 import { getSession } from "next-auth/react"
-// import { FiltersState } from "."
 
 export const api = createApi({
   baseQuery: fetchBaseQuery({
@@ -44,9 +44,9 @@ export const api = createApi({
           if (userDetailsResponse.error) {
             return { error: userDetailsResponse.error }
           }
-
+ 
           const userData = {
-            cognitoInfo: { id, name, email }, // kept as `cognitoInfo` to match your existing User type shape
+            cognitoInfo: { id, name, email, hasPassword: session.user.hasPassword },
             userInfo: userDetailsResponse.data,
             userRole: role,
           }
@@ -59,7 +59,23 @@ export const api = createApi({
         }
       },
     }),
+    updateTenantSettings: build.mutation<Tenant, { cognitoId: string } & Partial<Tenant>>({
+      query: ({ cognitoId, ...updatedTenant }) => ({
+        url: `/tenants/${cognitoId}`,
+        method: "PUT",
+        body: updatedTenant
+      }),
+      invalidatesTags: (result) => [{ type: "Tenants", id: result?.id }],
+    }),
+    updateManagerSettings: build.mutation<Manager, { cognitoId: string } & Partial<Manager>>({
+      query: ({ cognitoId, ...updatedManager }) => ({
+        url: `/managers/${cognitoId}`,
+        method: "PUT",
+        body: updatedManager
+      }),
+      invalidatesTags: (result) => [{ type: "Managers", id: result?.id }],
+    }),
   }),
 })
 
-export const { useGetAuthUserQuery } = api
+export const { useGetAuthUserQuery, useUpdateTenantSettingsMutation, useUpdateManagerSettingsMutation } = api

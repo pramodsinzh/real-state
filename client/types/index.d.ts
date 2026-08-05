@@ -130,11 +130,11 @@ declare global {
   }
 
   interface AuthInfo {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    hasPassword?: boolean;
+  }
 
   interface User {
     cognitoInfo: AuthInfo;
@@ -143,4 +143,4 @@ declare global {
   }
 }
 
-export {};
+export { };

@@ -18,3 +18,24 @@ declare module "next-auth/jwt" {
     role: string | null
   }
 }
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      role: string | null
+      hasPassword: boolean
+    } & DefaultSession["user"]
+  }
+  interface User {
+    role?: string | null
+    hasPassword?: boolean
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string
+    role: string | null
+    hasPassword: boolean
+  }
+}
