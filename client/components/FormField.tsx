@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ControllerRenderProps,
   FieldValues,
@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Edit, X, Plus } from "lucide-react";
+import { Edit, X, Plus, Eye, EyeOff } from "lucide-react";
 import { registerPlugin } from "filepond";
 import { FilePond } from "react-filepond";
 import "filepond/dist/filepond.min.css";
@@ -59,6 +59,36 @@ interface FormFieldProps {
   initialValue?: string | number | boolean | string[];
 }
 
+const PasswordField: React.FC<{
+  field: ControllerRenderProps<FieldValues, string>;
+  placeholder?: string;
+  inputClassName?: string;
+  disabled?: boolean;
+}> = ({ field, placeholder, inputClassName, disabled }) => {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative">
+      <Input
+        type={visible ? "text" : "password"}
+        placeholder={placeholder}
+        {...field}
+        className={`border-gray-200 p-4 pr-10 ${inputClassName}`}
+        disabled={disabled}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        tabIndex={-1}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-300"
+        aria-label={visible ? "Hide password" : "Show password"}
+      >
+        {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </button>
+    </div>
+  );
+};
+
 export const CustomFormField: React.FC<FormFieldProps> = ({
   name,
   label,
@@ -87,6 +117,15 @@ export const CustomFormField: React.FC<FormFieldProps> = ({
             {...field}
             rows={3}
             className={`border-gray-200 p-4 ${inputClassName}`}
+          />
+        );
+      case "password":
+        return (
+          <PasswordField
+            field={field}
+            placeholder={placeholder}
+            inputClassName={inputClassName}
+            disabled={disabled}
           />
         );
       case "select":

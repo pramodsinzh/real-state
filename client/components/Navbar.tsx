@@ -27,8 +27,8 @@ const Navbar = () => {
     pathname.includes("/manager") || pathname.includes("/tenants")
 
   const isManager = authUser?.userRole === "manager"
-  const dashboardPath = isManager ? "/manager/properties" : "/tenants/favorites"
-  const settingsPath = isManager ? "/manager/settings" : "/tenants/settings"
+  const dashboardPath = isManager ? "/managers/properties" : "/tenants/favorites"
+  const settingsPath = isManager ? "/managers/settings" : "/tenants/settings"
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/" })
@@ -71,7 +71,7 @@ const Navbar = () => {
               variant="secondary"
               className="md:ml-4 bg-primary-50 text-primary-700 hover:bg-secondary-500 hover:text-primary-50"
               onClick={() =>
-                router.push(isManager ? "/manager/newproperty" : "/search")
+                router.push(isManager ? "/managers/newproperty" : "/search")
               }
             >
               {isManager ? (
