@@ -26,6 +26,7 @@ export default {
       if (user) {
         token.role = user.role
         token.id = user.id
+        token.hasPassword = !!(user as any).hasPassword || !!(user as any).password
       }
       if (trigger === "update" && session?.role) {
         token.role = session.role
@@ -36,6 +37,7 @@ export default {
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as string | null
+        session.user.hasPassword = token.hasPassword as boolean
       }
       return session
     },

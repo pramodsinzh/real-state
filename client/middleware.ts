@@ -30,11 +30,11 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/landing", req.url))
   }
 
-  if (pathname.startsWith("/manager") && role !== "manager") {
+  if (pathname.startsWith("/managers") && role !== "manager") {
     return NextResponse.redirect(new URL("/tenants/dashboard", req.url))
   }
-  if (pathname.startsWith("/tenants") && role !== "tenant") {
-    return NextResponse.redirect(new URL("/manager/dashboard", req.url))
+  if (pathname.startsWith("/tenants") && role !== "manager" && role !== "tenant") {
+    return NextResponse.redirect(new URL("/managers/dashboard", req.url))
   }
 
   return NextResponse.next()
@@ -44,7 +44,7 @@ export const config = {
   matcher: [
     "/",
     "/landing",
-    "/manager/:path*",
+    "/managers/:path*",
     "/tenants/:path*",
     "/onboarding",
     "/signin",
