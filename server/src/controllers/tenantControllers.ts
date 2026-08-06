@@ -1,7 +1,9 @@
-import type { Request, Response } from "express"
+import type { Response } from "express"
 import prisma from "../lib/prisma.js"
+import type { AuthenticatedRequest } from "../middleware/authMiddleware.js"
+import { wktToGeoJSON } from "@terraformer/wkt"
 
-export const getTenant = async (req: Request, res: Response): Promise<void> => {
+export const getTenant = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { cognitoId } = req.params
 
@@ -26,7 +28,7 @@ export const getTenant = async (req: Request, res: Response): Promise<void> => {
   }
 }
 
-export const createTenant = async (req: Request, res: Response): Promise<void> => {
+export const createTenant = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { cognitoId, name, email, phoneNumber } = req.body
     const tenant = await prisma.tenant.create({
@@ -38,12 +40,17 @@ export const createTenant = async (req: Request, res: Response): Promise<void> =
   }
 }
 
-export const updateTenant = async (req: Request, res: Response): Promise<void> => {
+export const updateTenant = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { cognitoId } = req.params
 
     if (!cognitoId || typeof cognitoId !== "string") {
       res.status(400).json({ error: "Invalid cognitoId" })
+      return
+    }
+
+    if (req.user?.id !== cognitoId) {
+      res.status(403).json({ error: "Forbidden" })
       return
     }
 
@@ -57,5 +64,125 @@ export const updateTenant = async (req: Request, res: Response): Promise<void> =
     res.status(200).json(updatedTenant)
   } catch (error: any) {
     res.status(500).json({ message: `Error updating tenant: ${error.message}` })
+  }
+}
+
+export const getCurrentResidences = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { cognitoId } = req.params
+
+    if (!cognitoId || typeof cognitoId !== "string") {
+      res.status(400).json({ error: "Invalid cognitoId" })
+      return
+    }
+
+    const properties = await prisma.property.findMany({
+      where: { tenants: { some: { cognitoId } } },
+      include: { location: true },
+    })
+
+    const residencesWithFormattedLocation = await Promise.all(
+      properties.map(async (property) => {
+        const coordinates: { coordinates: string }[] = await prisma.$queryRaw`SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id}`
+
+        const geoJSON: any = wktToGeoJSON(coordinates[0]?.coordinates || "")
+        const longitude = geoJSON.coordinates[0]
+        const latitude = geoJSON.coordinates[1]
+
+        return {
+          ...property,
+          location: {
+            ...property.location,
+            coordinates: {
+              longitude,
+              latitude,
+            },
+          },
+        }
+      })
+    )
+
+    res.json(residencesWithFormattedLocation)
+  } catch (error: any) {
+    res.status(500).json({ message: `Error retrieving current residences: ${error.message}` })
+  }
+}
+
+export const addFavoriteProperty = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { cognitoId, propertyId } = req.params
+
+    if (!cognitoId || typeof cognitoId !== "string") {
+      res.status(400).json({ error: "Invalid cognitoId" })
+      return
+    }
+    if (!propertyId || typeof propertyId !== "string") {
+      res.status(400).json({ error: "Invalid propertyId" })
+      return
+    }
+
+    if (req.user?.id !== cognitoId) {
+      res.status(403).json({ error: "Forbidden" })
+      return
+    }
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { cognitoId },
+      include: { favorites: true },
+    })
+
+    const propertyIdNumber = Number(propertyId)
+    const existingFavorites = tenant?.favorites || []
+
+    if (!existingFavorites.some((fav) => fav.id === propertyIdNumber)) {
+      const updatedTenant = await prisma.tenant.update({
+        where: { cognitoId },
+        data: {
+          favorites: {
+            connect: { id: propertyIdNumber },
+          },
+        },
+        include: { favorites: true },
+      })
+      res.json(updatedTenant)
+    } else {
+      res.status(409).json({ message: "Property already added as favorite." })
+    }
+  } catch (error: any) {
+    res.status(500).json({ message: `Error adding favorite property: ${error.message}` })
+  }
+}
+
+export const removeFavoriteProperty = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { cognitoId, propertyId } = req.params
+
+    if (!cognitoId || typeof cognitoId !== "string") {
+      res.status(400).json({ error: "Invalid cognitoId" })
+      return
+    }
+    if (!propertyId || typeof propertyId !== "string") {
+      res.status(400).json({ error: "Invalid propertyId" })
+      return
+    }
+
+    if (req.user?.id !== cognitoId) {
+      res.status(403).json({ error: "Forbidden" })
+      return
+    }
+
+    const propertyIdNumber = Number(propertyId)
+    const updatedTenant = await prisma.tenant.update({
+      where: { cognitoId },
+      data: {
+        favorites: {
+          disconnect: { id: propertyIdNumber },
+        },
+      },
+      include: { favorites: true },
+    })
+    res.json(updatedTenant)
+  } catch (error: any) {
+    res.status(500).json({ message: `Error removing favorite property: ${error.message}` })
   }
 }
