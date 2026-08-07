@@ -1,20 +1,23 @@
 import type { Response } from "express"
 import { Prisma, type Location } from "@prisma/client"
 import { wktToGeoJSON } from "@terraformer/wkt"
-import { Upload } from "@aws-sdk/lib-storage"
-import { S3Client } from "@aws-sdk/client-s3"
+import { v2 as cloudinary } from "cloudinary"
 import axios from "axios"
 import type { AuthenticatedRequest } from "../middleware/authMiddleware.js"
 import prisma from "../lib/prisma.js"
 
-const AWS_REGION = process.env.AWS_REGION
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET
 
-if (!AWS_REGION) {
-  throw new Error("AWS_REGION is not set in environment variables")
+if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+  throw new Error("Cloudinary environment variables are not set")
 }
 
-const s3Client = new S3Client({
-  region: AWS_REGION,
+cloudinary.config({
+  cloud_name: CLOUDINARY_CLOUD_NAME,
+  api_key: CLOUDINARY_API_KEY,
+  api_secret: CLOUDINARY_API_SECRET,
 })
 
 export const getProperties = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -169,17 +172,20 @@ export const createProperty = async (req: AuthenticatedRequest, res: Response): 
 
     const photoUrls = await Promise.all(
       files.map(async (file) => {
-        const uploadParams = {
-          Bucket: process.env.S3_BUCKET_NAME!,
-          Key: `properties/${Date.now()}-${file.originalname}`,
-          Body: file.buffer,
-          ContentType: file.mimetype,
-        }
-        const uploadResult = await new Upload({
-          client: s3Client,
-          params: uploadParams,
-        }).done()
-        return uploadResult.Location
+        const result = await new Promise<string>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "rentiful/properties",
+              resource_type: "image",
+            },
+            (error, result) => {
+              if (error || !result) return reject(error)
+              resolve(result.secure_url)
+            }
+          )
+          uploadStream.end(file.buffer)
+        })
+        return result
       })
     )
 
