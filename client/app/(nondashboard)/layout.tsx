@@ -13,6 +13,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    if (authLoading) return
+
     if (authUser) {
       const userRole = authUser.userRole
       if (
@@ -20,12 +22,15 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         (userRole === 'manager' && pathname === '/')
       ) {
         router.push("/managers/properties", { scroll: false })
-      } else {
-        setIsLoading(false)
+        return
       }
     }
-  }, [authUser, pathname, router])
+
+    setIsLoading(false)
+  }, [authUser, authLoading, pathname, router])
+
   if (authLoading || isLoading) return <>loading...</>
+
   return (
     <div className='h-full w-full'>
       <Navbar />

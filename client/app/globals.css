@@ -316,3 +316,46 @@ body,
 [data-close-button="true"] {
   @apply bg-background border-border text-foreground hover:bg-muted;
 }
+
+
+.leaflet-popup.property-popup .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 0.75rem !important;
+  background-color: #111827 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+  overflow: hidden !important;
+}
+
+.leaflet-popup.property-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+  overflow: hidden !important;
+}
+
+.leaflet-popup.property-popup .leaflet-popup-tip {
+  background-color: #111827 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2) !important;
+}
+
+.leaflet-popup.property-popup .leaflet-popup-close-button {
+  top: 8px !important;
+  right: 8px !important;
+  color: #9ca3af !important;
+  font-size: 16px !important;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.leaflet-popup.property-popup .leaflet-popup-close-button:hover {
+  color: #ffffff !important;
+}
+.leaflet-popup-content p{
+    margin: 0.3em 0 !important;
+}
+
+.image-fallback::after {
+  content: "";
+  width: 32px;
+  height: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='1.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M4.5 21h15A2.25 2.25 0 0021.75 18.75V5.25A2.25 2.25 0 0019.5 3h-15A2.25 2.25 0 002.25 5.25v13.5A2.25 2.25 0 004.5 21z'/%3E%3C/svg%3E");
+}
