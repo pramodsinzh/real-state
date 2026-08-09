@@ -141,6 +141,21 @@ declare global {
     userInfo: Tenant | Manager;
     userRole: "tenant" | "manager";
   }
+
+  interface PropertyWithLocation extends Omit<Property, "locationId"> {
+    location: {
+      id: number;
+      address: string;
+      city: string;
+      state: string;
+      country: string;
+      postalCode: string;
+      coordinates: {
+        longitude: number;
+        latitude: number;
+      };
+    };
+  }
 }
 
 export { };
