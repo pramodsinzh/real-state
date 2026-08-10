@@ -95,7 +95,7 @@ declare global {
   }
 
   interface CardProps {
-    property: Property;
+    property: PropertyWithLocation;
     isFavorite: boolean;
     onFavoriteToggle: () => void;
     showFavoriteButton?: boolean;
@@ -103,7 +103,7 @@ declare global {
   }
 
   interface CardCompactProps {
-    property: Property;
+    property: PropertyWithLocation;
     isFavorite: boolean;
     onFavoriteToggle: () => void;
     showFavoriteButton?: boolean;
@@ -140,6 +140,10 @@ declare global {
     cognitoInfo: AuthInfo;
     userInfo: Tenant | Manager;
     userRole: "tenant" | "manager";
+  }
+  
+  interface TenantWithFavorites extends Tenant {
+    favorites: Property[];
   }
 
   interface PropertyWithLocation extends Omit<Property, "locationId"> {
