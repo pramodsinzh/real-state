@@ -9,6 +9,9 @@ import { useEffect } from 'react'
 import { cleanParams } from '@/lib/utils'
 import { setFilters } from '@/state'
 import Map from './Map'
+import Listings from './Listings'
+
+
 const SearchPage = () => {
   const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
@@ -33,20 +36,20 @@ const SearchPage = () => {
     const cleanedFilters = cleanParams(initialFilters);
     dispatch(setFilters(cleanedFilters));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  
+
   return (
     <div className='w-full mx-auto px-5 flex flex-col'
       style={{
         height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
       }}>
       <FiltersBar />
-      <div className="flex justify-between flex-1 gap-3 mb-5">
-        <div className={`h-full overflow-auto transition-all duration-300 ease-in-out ${isFiltersFullOpen ? "w-3/12 opacity-100 visible" : "w-0 opacity-0 invisible"}`}>
+      <div className="flex justify-between flex-1 gap-3 mb-5 min-h-0">
+        <div className={`h-full overflow-auto min-h-0 transition-all duration-300 ease-in-out ${isFiltersFullOpen ? "w-3/12 opacity-100 visible" : "w-0 opacity-0 invisible"}`}>
           <FiltersFull />
         </div>
         <Map />
-        <div className="basis-4/12 overflow-y-auto">
-          {/* <Listings /> */}
+        <div className="basis-4/12 overflow-y-auto min-h-0">
+          <Listings />
         </div>
       </div>
     </div>
