@@ -352,6 +352,15 @@ body,
 .leaflet-popup-content p{
     margin: 0.3em 0 !important;
 }
+.leaflet-container {
+  z-index: 0;
+}
+
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 10 !important;
+}
 
 .image-fallback::after {
   content: "";

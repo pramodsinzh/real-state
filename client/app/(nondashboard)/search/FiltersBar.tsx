@@ -61,6 +61,39 @@ const FiltersBar = () => {
         updateURL(newFilters);
     };
 
+    const handleLocationSearch = async () => {
+        if (!searchInput) return;
+
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
+                    q: searchInput,
+                    format: "json",
+                    limit: "1",
+                }).toString()}`,
+                {
+                    headers: {
+                        "Accept-Language": "en",
+                    },
+                }
+            );
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                const { lon, lat } = data[0];
+                const newFilters = {
+                    ...filters,
+                    location: searchInput,
+                    coordinates: [parseFloat(lon), parseFloat(lat)] as [number, number],
+                };
+                dispatch(setFilters(newFilters));
+                updateURL(newFilters);
+            }
+        } catch (err) {
+            console.error("Error searching location:", err);
+        }
+    };
+
     const bedsLabel = filters.beds === "any" ? "Any Beds" : `${filters.beds}+ bed${filters.beds === "1" ? "" : "s"}`
     const bathsLabel = filters.baths === "any" ? "Any Baths" : `${filters.baths}+ bath${filters.baths === "1" ? "" : "s"}`
     const propertyTypeLabel = !filters.propertyType || filters.propertyType === "any" ? "Any Property" : filters.propertyType
@@ -93,7 +126,7 @@ const FiltersBar = () => {
                         className="w-40 border-0 rounded-none text-sm shadow-none focus-visible:ring-0"
                     />
                     <Button
-                        // onClick={handleLocationSearch}
+                        onClick={handleLocationSearch}
                         variant="ghost"
                         className="rounded-none border-0 border-l border-gray-200 shadow-none px-3 text-gray-500 hover:bg-gray-200 hover:text-gray-900"
                     >

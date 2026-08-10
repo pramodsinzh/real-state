@@ -55,8 +55,38 @@ const FiltersFull = () => {
         }));
     };
 
-    const bedsLabel = filters.beds === "any" ? "Any Beds" : `${filters.beds}+ bed${filters.beds === "1" ? "" : "s"}`
-    const bathsLabel = filters.baths === "any" ? "Any Baths" : `${filters.baths}+ bath${filters.baths === "1" ? "" : "s"}`
+    const handleLocationSearch = async () => {
+        if (!localFilters.location) return;
+
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
+                    q: localFilters.location,
+                    format: "json",
+                    limit: "1",
+                }).toString()}`,
+                {
+                    headers: {
+                        "Accept-Language": "en",
+                    },
+                }
+            );
+            const data = await response.json();
+
+            if (data && data.length > 0) {
+                const { lon, lat } = data[0];
+                setLocalFilters((prev) => ({
+                    ...prev,
+                    coordinates: [parseFloat(lon), parseFloat(lat)] as [number, number],
+                }));
+            }
+        } catch (err) {
+            console.error("Error searching location:", err);
+        }
+    };
+
+    const bedsLabel = localFilters.beds === "any" ? "Any Beds" : `${localFilters.beds}+ bed${localFilters.beds === "1" ? "" : "s"}`
+    const bathsLabel = localFilters.baths === "any" ? "Any Baths" : `${localFilters.baths}+ bath${localFilters.baths === "1" ? "" : "s"}`
     
     if (!isFiltersFullOpen) return null;
     return (
@@ -69,7 +99,7 @@ const FiltersFull = () => {
                     <div className="flex items-center rounded-full border border-gray-200 overflow-hidden transition-colors duration-300 focus-within:border-gray-400">
                         <Input
                             placeholder="Enter location"
-                            value={filters.location}
+                            value={localFilters.location}
                             onChange={(e) =>
                                 setLocalFilters((prev) => ({
                                     ...prev,
@@ -79,7 +109,7 @@ const FiltersFull = () => {
                             className="border-0 rounded-none text-sm shadow-none focus-visible:ring-0"
                         />
                         <Button
-                            // onClick={handleLocationSearch}
+                            onClick={handleLocationSearch}
                             variant="ghost"
                             className="rounded-none border-0 border-l border-gray-200 shadow-none px-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                         >

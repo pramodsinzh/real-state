@@ -61,7 +61,7 @@ const MapView = ({ properties, center }: MapViewProps) => {
   const leafletCenter: [number, number] = [center[1], center[0]];
 
   return (
-    <div className="w-full h-[400px] md:h-full md:basis-5/12 md:grow relative rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+    <div className="w-full h-[400px] md:h-full md:basis-5/12 md:grow relative z-0 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
       <MapContainer
         center={leafletCenter}
         zoom={9}
