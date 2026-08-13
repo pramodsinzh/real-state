@@ -186,3 +186,22 @@ export const removeFavoriteProperty = async (req: AuthenticatedRequest, res: Res
     res.status(500).json({ message: `Error removing favorite property: ${error.message}` })
   }
 }
+
+export const getTenantLeases = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { cognitoId } = req.params
+
+    if (!cognitoId || typeof cognitoId !== "string") {
+      res.status(400).json({ error: "Invalid cognitoId" })
+      return
+    }
+
+    const leases = await prisma.lease.findMany({
+      where: { tenantCognitoId: cognitoId },
+    })
+
+    res.json(leases)
+  } catch (error: any) {
+    res.status(500).json({ message: `Error retrieving leases: ${error.message}` })
+  }
+}
