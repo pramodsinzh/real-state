@@ -1,4 +1,4 @@
-import { Application, Manager, Property, Tenant } from "@/types/prismaTypes"
+import { Application, Lease, Manager, Payment, Property, Tenant } from "@/types/prismaTypes"
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 import { getSession } from "next-auth/react"
 import { FiltersState } from "."
@@ -127,7 +127,7 @@ export const api = createApi({
       },
     }),
 
-    getCurrentResidences: build.query<Property[], string>({
+    getCurrentResidences: build.query<PropertyWithLocation[], string>({
       query: (cognitoId) => `tenants/${cognitoId}/current-residences`,
       providesTags: (result) =>
         result
@@ -208,8 +208,37 @@ export const api = createApi({
         });
       },
     }),
+
+    // lease related enpoints
+    getLeases: build.query<Lease[], void>({
+      query: () => "leases",
+      providesTags: ["Leases"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          error: "Failed to fetch leases.",
+        });
+      },
+    }),
+    getPropertyLeases: build.query<Lease[], number>({
+      query: (propertyId) => `properties/${propertyId}/leases`,
+      providesTags: ["Leases"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          error: "Failed to fetch property leases.",
+        });
+      },
+    }),
+    getPayments: build.query<Payment[], number>({
+      query: (leaseId) => `leases/${leaseId}/payments`,
+      providesTags: ["Payments"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          error: "Failed to fetch payment info.",
+        });
+      },
+    }),
   }),
-}); 
+});
 
 export const {
   useGetAuthUserQuery,
@@ -222,4 +251,7 @@ export const {
   useGetTenantQuery,
   useGetCurrentResidencesQuery,
   useCreateApplicationMutation,
+  useGetLeasesQuery,
+  useGetPaymentsQuery,
+  useGetPropertyLeasesQuery,
 } = api
