@@ -1,5 +1,5 @@
 import { LucideIcon } from "lucide-react";
-import { Manager, Tenant, Property, Application } from "./prismaTypes";
+import { Manager, Tenant, Property, Application, Lease } from "./prismaTypes";
 import { MotionProps as OriginalMotionProps } from "framer-motion";
 
 declare module "framer-motion" {
@@ -141,9 +141,16 @@ declare global {
     userInfo: Tenant | Manager;
     userRole: "tenant" | "manager";
   }
-  
+
   interface TenantWithFavorites extends Tenant {
     favorites: Property[];
+  }
+
+  interface LeaseWithTenant extends Lease {
+    tenant: Tenant;
+  }
+  interface PropertyWithLocationAndManager extends PropertyWithLocation {
+    manager?: Manager;
   }
 
   interface PropertyWithLocation extends Omit<Property, "locationId"> {

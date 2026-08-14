@@ -17,7 +17,7 @@ export const propertySchema = z.object({
   beds: z.coerce.number().positive().min(0).max(10).int(),
   baths: z.coerce.number().positive().min(0).max(10).int(),
   squareFeet: z.coerce.number().int().positive(),
-  propertyType: z.nativeEnum(PropertyTypeEnum),
+  propertyType: z.enum(PropertyTypeEnum),
   address: z.string().min(1, "Address is required"),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "State is required"),
@@ -25,7 +25,10 @@ export const propertySchema = z.object({
   postalCode: z.string().min(1, "Postal code is required"),
 });
 
-export type PropertyFormData = z.infer<typeof propertySchema>;
+// Use for the form's `useForm<...>()` generic — matches what the inputs actually hold before coercion
+export type PropertyFormInput = z.input<typeof propertySchema>;
+// Use for `onSubmit(data: ...)` — matches the coerced/validated shape after zod runs
+export type PropertyFormData = z.output<typeof propertySchema>;
 
 export const applicationSchema = z.object({
   name: z.string().min(1, "Name is required"),

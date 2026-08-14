@@ -62,6 +62,23 @@ export const api = createApi({
       },
     }),
 
+    // manager related endpoints
+    getManagerProperties: build.query<PropertyWithLocation[], string>({
+      query: (cognitoId) => `managers/${cognitoId}/properties`,
+      providesTags: (result) =>
+        result
+          ? [
+            ...result.map(({ id }) => ({ type: "Properties" as const, id })),
+            { type: "Properties", id: "LIST" },
+          ]
+          : [{ type: "Properties", id: "LIST" }],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          error: "Failed to load manager properties.",
+        });
+      },
+    }),
+
     updateManagerSettings: build.mutation<Manager, { cognitoId: string } & Partial<Manager>>({
       query: ({ cognitoId, ...updatedManager }) => ({
         url: `/managers/${cognitoId}`,
@@ -69,6 +86,21 @@ export const api = createApi({
         body: updatedManager
       }),
       invalidatesTags: (result) => [{ type: "Managers", id: result?.id }],
+    }),
+
+    createProperty: build.mutation<PropertyWithLocation, FormData>({
+      query: (newProperty) => ({
+        url: `properties`,
+        method: "POST",
+        body: newProperty,
+      }),
+      invalidatesTags: [{ type: "Properties", id: "LIST" }],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          success: "Property created successfully!",
+          error: "Failed to create property.",
+        });
+      },
     }),
 
     // property related endpoints
@@ -219,7 +251,7 @@ export const api = createApi({
         });
       },
     }),
-    getPropertyLeases: build.query<Lease[], number>({
+    getPropertyLeases: build.query<LeaseWithTenant[], number>({
       query: (propertyId) => `properties/${propertyId}/leases`,
       providesTags: ["Leases"],
       async onQueryStarted(_, { queryFulfilled }) {
@@ -244,6 +276,8 @@ export const {
   useGetAuthUserQuery,
   useUpdateTenantSettingsMutation,
   useUpdateManagerSettingsMutation,
+  useGetManagerPropertiesQuery,
+  useCreatePropertyMutation,
   useGetPropertiesQuery,
   useGetPropertyQuery,
   useAddFavoritePropertyMutation,
