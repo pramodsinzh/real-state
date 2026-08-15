@@ -256,3 +256,23 @@ export const createProperty = async (req: AuthenticatedRequest, res: Response): 
     res.status(500).json({ message: `Error creating property: ${error.message}` })
   }
 }
+
+export const getPropertyLeases = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params
+
+    if (!id || typeof id !== "string" || isNaN(Number(id))) {
+      res.status(400).json({ message: "Invalid property id" })
+      return
+    }
+
+    const leases = await prisma.lease.findMany({
+      where: { propertyId: Number(id) },
+      include: { tenant: true },
+    })
+
+    res.json(leases)
+  } catch (error: any) {
+    res.status(500).json({ message: `Error retrieving property leases: ${error.message}` })
+  }
+}
