@@ -23,8 +23,7 @@ const Navbar = () => {
   const router = useRouter()
   const pathname = usePathname()
 
-  const isDashboardPage =
-    pathname.includes("/manager") || pathname.includes("/tenants")
+  const isDashboardPage = pathname.includes("/manager") || pathname.includes("/tenants")
 
   const isManager = authUser?.userRole === "manager"
   const dashboardPath = isManager ? "/managers/properties" : "/tenants/favorites"
