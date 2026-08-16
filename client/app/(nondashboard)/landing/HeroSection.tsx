@@ -1,17 +1,62 @@
 "use client"
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { NAVBAR_HEIGHT } from '@/lib/constants'
+import { useDispatch } from 'react-redux'
+import { useRouter } from 'next/navigation'
+import { setFilters } from '@/state'
 
 const HeroSection = () => {
     const shouldReduceMotion = useReducedMotion()
+    const dispatch = useDispatch()
+    const router = useRouter()
+    const [searchQuery, setSearchQuery] = useState("")
 
-    const handleSearch = () => {
-        // TODO: wire up actual search logic (e.g. router push with query param)
+    const handleSearch = async () => {
+        const trimmedQuery = searchQuery.trim()
+        if (!trimmedQuery) return
+
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
+                    q: trimmedQuery,
+                    format: "json",
+                    limit: "1",
+                }).toString()}`,
+                {
+                    headers: {
+                        "Accept-Language": "en",
+                    },
+                }
+            )
+            const data = await response.json()
+
+            if (data && data.length > 0) {
+                const { lon, lat } = data[0]
+                const coordinates: [number, number] = [parseFloat(lon), parseFloat(lat)]
+
+                dispatch(
+                    setFilters({
+                        location: trimmedQuery,
+                        coordinates,
+                    })
+                )
+
+                const params = new URLSearchParams({
+                    location: trimmedQuery,
+                    lat: lat,
+                    lng: lon,
+                })
+                router.push(`/search?${params.toString()}`)
+            }
+        } catch (error) {
+            console.error("Error searching location:", error)
+        }
     }
 
     return (
@@ -34,7 +79,7 @@ const HeroSection = () => {
                 initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: shouldReduceMotion ? 0 : 0.8 }}
-                className='absolute top-1/3 -translate-y-1/2 text-center w-full px-4'
+                className='absolute top-1/2 -translate-y-1/2 text-center w-full px-4'
             >
                 <div className="max-w-4xl mx-auto px-6 sm:px-12">
                     <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight [text-shadow:_0_2px_12px_rgba(0,0,0,0.4)]">
@@ -47,6 +92,8 @@ const HeroSection = () => {
                     <div className="flex flex-col sm:flex-row justify-center max-w-lg mx-auto rounded-xl sm:rounded-none shadow-lg sm:shadow-none transition-shadow duration-300 hover:shadow-xl">
                         <Input
                             type='text'
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder='Search by city, neighborhood or address'
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSearch()
