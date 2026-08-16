@@ -1,8 +1,9 @@
 @import "tailwindcss";
- 
+
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
 
 @theme {
   --color-background: hsl(var(--background));
@@ -81,12 +82,13 @@ html,
 body,
 #root,
 .app {
-  height: 100%;
+  min-height: 100%;
   width: 100%;
   @apply text-sm;
-  @apply bg-white;
+  @apply bg-gray-100;
   @apply dark:bg-black;
 }
+
 
 @layer base {
   :root {
@@ -154,6 +156,13 @@ body,
 .dashboard-container {
   @apply pt-8 pb-5 px-8;
 }
+
+
+
+@custom-variant horizontal (&[data-orientation="horizontal"]);
+@custom-variant vertical (&[data-orientation="vertical"]);
+@custom-variant data-horizontal (&[data-orientation="horizontal"]);
+@custom-variant data-vertical (&[data-orientation="vertical"]);
 
 .mapboxgl-popup-content {
   @apply !bg-primary-700;
@@ -228,6 +237,7 @@ body,
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -236,9 +246,7 @@ body,
 /* Amplify UI Overrides */
 [data-amplify-authenticator] {
   --amplify-components-button-primary-background-color: var(--primary);
-  --amplify-components-button-primary-hover-background-color: hsl(
-    var(--primary) / 0.9
-  );
+  --amplify-components-button-primary-hover-background-color: hsl(var(--primary) / 0.9);
   --amplify-components-button-border-radius: var(--radius);
   --amplify-components-fieldcontrol-border-radius: var(--radius);
 }
@@ -313,10 +321,77 @@ body,
 }
 
 /* Sonner Toast Styles */
-[data-close-button="true"] {
-  @apply bg-background border-border text-foreground hover:bg-muted;
+[data-sonner-toaster] [data-sonner-toast] {
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2) !important;
+  padding: 14px 16px !important;
+  border: none !important;
 }
 
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] {
+  background-color: #16a34a !important;
+  color: white !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  background-color: #dc2626 !important;
+  color: white !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="warning"] {
+  background-color: #d97706 !important;
+  color: white !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="info"],
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"] {
+  background-color: #1f2937 !important;
+  color: white !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-title],
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: inherit !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  opacity: 0.9 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-icon] svg {
+  color: inherit !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  top: 50% !important;
+  right: 12px !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+  background-color: transparent !important;
+  border: none !important;
+  color: white !important;
+  opacity: 0.75 !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity 0.2s !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-close-button]:hover {
+  opacity: 1 !important;
+  background-color: transparent !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+ 
 
 .leaflet-popup.property-popup .leaflet-popup-content-wrapper {
   padding: 0 !important;
@@ -349,9 +424,11 @@ body,
 .leaflet-popup.property-popup .leaflet-popup-close-button:hover {
   color: #ffffff !important;
 }
-.leaflet-popup-content p{
-    margin: 0.3em 0 !important;
+
+.leaflet-popup-content p {
+  margin: 0.3em 0 !important;
 }
+
 .leaflet-container {
   z-index: 0;
 }
