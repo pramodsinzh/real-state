@@ -48,7 +48,7 @@ export const api = createApi({
           }
 
           const userData = {
-            cognitoInfo: { id, name, email, hasPassword: session.user.hasPassword },
+            cognitoInfo: { id, name, email, image: session.user.image, hasPassword: session.user.hasPassword },
             userInfo: userDetailsResponse.data,
             userRole: role,
           }
@@ -86,6 +86,12 @@ export const api = createApi({
         body: updatedManager
       }),
       invalidatesTags: (result) => [{ type: "Managers", id: result?.id }],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          success: "Settings updated successfully!",
+          error: "Failed to update settings.",
+        });
+      },
     }),
 
     createProperty: build.mutation<PropertyWithLocation, FormData>({
@@ -138,7 +144,7 @@ export const api = createApi({
       },
     }),
 
-    getProperty: build.query<PropertyWithLocation, number>({
+    getProperty: build.query<PropertyWithLocationAndManager, number>({
       query: (id) => `properties/${id}`,
       providesTags: (result, error, id) => [{ type: "PropertyDetails", id }],
       async onQueryStarted(_, { queryFulfilled }) {
@@ -182,6 +188,12 @@ export const api = createApi({
         body: updatedTenant
       }),
       invalidatesTags: (result) => [{ type: "Tenants", id: result?.id }],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          success: "Settings updated successfully!",
+          error: "Failed to update settings.",
+        });
+      },
     }),
 
     addFavoriteProperty: build.mutation
@@ -225,6 +237,34 @@ export const api = createApi({
       }),
 
     // application related endpoints
+
+    getApplications: build.query<ApplicationWithDetails[], void>({
+      query: () => "applications",
+      providesTags: ["Applications"],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          error: "Failed to fetch applications.",
+        });
+      },
+    }),
+
+    updateApplicationStatus: build.mutation
+      <Application & { lease?: Lease },
+        { id: number; status: "Pending" | "Denied" | "Approved" }
+      >({
+        query: ({ id, status }) => ({
+          url: `applications/${id}/status`,
+          method: "PUT",
+          body: { status },
+        }),
+        invalidatesTags: ["Applications", "Leases"],
+        async onQueryStarted(_, { queryFulfilled }) {
+          await withToast(queryFulfilled, {
+            success: "Application status updated successfully!",
+            error: "Failed to update application status.",
+          });
+        },
+      }),
 
     createApplication: build.mutation<Application, Partial<Application>>({
       query: (body) => ({
@@ -284,8 +324,10 @@ export const {
   useRemoveFavoritePropertyMutation,
   useGetTenantQuery,
   useGetCurrentResidencesQuery,
-  useCreateApplicationMutation,
   useGetLeasesQuery,
   useGetPaymentsQuery,
   useGetPropertyLeasesQuery,
+  useGetApplicationsQuery,
+  useUpdateApplicationStatusMutation,
+  useCreateApplicationMutation,
 } = api

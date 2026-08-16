@@ -70,6 +70,7 @@ declare global {
 
   interface ContactWidgetProps {
     onOpenModal: () => void;
+    propertyId: number;
   }
 
   interface ImagePreviewsProps {
@@ -89,7 +90,7 @@ declare global {
   }
 
   interface ApplicationCardProps {
-    application: Application;
+    application: ApplicationWithDetails;
     userType: "manager" | "renter";
     children: React.ReactNode;
   }
@@ -133,6 +134,7 @@ declare global {
     id: string;
     name?: string | null;
     email?: string | null;
+    image?: string | null;
     hasPassword?: boolean;
   }
 
@@ -150,7 +152,13 @@ declare global {
     tenant: Tenant;
   }
   interface PropertyWithLocationAndManager extends PropertyWithLocation {
-    manager?: Manager;
+    manager: Manager;
+  }
+  interface ApplicationWithDetails extends Application {
+    property: PropertyWithLocation & { manager: Manager };
+    tenant: Tenant;
+    manager: Manager;
+    lease: (Lease & { nextPaymentDate: Date }) | null;
   }
 
   interface PropertyWithLocation extends Omit<Property, "locationId"> {
