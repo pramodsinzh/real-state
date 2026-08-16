@@ -130,9 +130,8 @@ export const getProperty = async (req: AuthenticatedRequest, res: Response): Pro
 
     const property = await prisma.property.findUnique({
       where: { id: Number(id) },
-      include: { location: true },
+      include: { location: true, manager: true },
     })
-
     if (property) {
       const coordinates: { coordinates: string }[] = await prisma.$queryRaw`SELECT ST_asText(coordinates) as coordinates from "Location" where id = ${property.location.id}`
 

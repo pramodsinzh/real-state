@@ -1,35 +1,36 @@
 import { type Response } from "express";
-import { PrismaClient } from "@prisma/client";
-import type { AuthenticatedRequest } from "../middleware/authMiddleware.js"; 
-import { PrismaPg } from "@prisma/adapter-pg";
+import type { AuthenticatedRequest } from "../middleware/authMiddleware.js";
+import prisma from "../lib/prisma.js";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const prisma = new PrismaClient({
-  adapter,
-});
+function calculateNextPaymentDate(startDate: Date): Date {
+  const today = new Date();
+  const nextPaymentDate = new Date(startDate);
+  while (nextPaymentDate <= today) {
+    nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+  }
+  return nextPaymentDate;
+}
 
 export const listApplications = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const { userId, userType } = req.query;
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
 
     let whereClause = {};
 
-    if (userId && userType) {
-      if (userType === "tenant") {
-        whereClause = { tenantCognitoId: String(userId) };
-      } else if (userType === "manager") {
-        whereClause = {
-          property: {
-            managerCognitoId: String(userId),
-          },
-        };
-      }
+    if (req.user.role === "tenant") {
+      whereClause = { tenantCognitoId: req.user.id };
+    } else if (req.user.role === "manager") {
+      whereClause = {
+        property: {
+          managerCognitoId: req.user.id,
+        },
+      };
     }
 
     const applications = await prisma.application.findMany({
@@ -42,46 +43,24 @@ export const listApplications = async (
           },
         },
         tenant: true,
+        lease: true,
       },
     });
 
-    function calculateNextPaymentDate(startDate: Date): Date {
-      const today = new Date();
-      const nextPaymentDate = new Date(startDate);
-      while (nextPaymentDate <= today) {
-        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
-      }
-      return nextPaymentDate;
-    }
-
-    const formattedApplications = await Promise.all(
-      applications.map(async (app) => {
-        const lease = await prisma.lease.findFirst({
-          where: {
-            tenant: {
-              cognitoId: app.tenantCognitoId,
-            },
-            propertyId: app.propertyId,
-          },
-          orderBy: { startDate: "desc" },
-        });
-
-        return {
-          ...app,
-          property: {
-            ...app.property,
-            address: app.property.location.address,
-          },
-          manager: app.property.manager,
-          lease: lease
-            ? {
-                ...lease,
-                nextPaymentDate: calculateNextPaymentDate(lease.startDate),
-              }
-            : null,
-        };
-      })
-    );
+    const formattedApplications = applications.map((app) => ({
+      ...app,
+      property: {
+        ...app.property,
+        address: app.property.location.address,
+      },
+      manager: app.property.manager,
+      lease: app.lease
+        ? {
+            ...app.lease,
+            nextPaymentDate: calculateNextPaymentDate(app.lease.startDate),
+          }
+        : null,
+    }));
 
     res.json(formattedApplications);
   } catch (error: any) {
@@ -96,16 +75,22 @@ export const createApplication = async (
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.user || req.user.role !== "tenant") {
+      res.status(403).json({ message: "Only tenants can submit applications" });
+      return;
+    }
+
     const {
       applicationDate,
       status,
       propertyId,
-      tenantCognitoId,
       name,
       email,
       phoneNumber,
       message,
     } = req.body;
+
+    const tenantCognitoId = req.user.id;
 
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
@@ -117,14 +102,13 @@ export const createApplication = async (
       return;
     }
 
-    const newApplication = await prisma.$transaction(async (prisma) => {
-      // Create lease first
-      const lease = await prisma.lease.create({
+    const newApplication = await prisma.$transaction(async (tx) => {
+      const lease = await tx.lease.create({
         data: {
-          startDate: new Date(), // Today
+          startDate: new Date(),
           endDate: new Date(
             new Date().setFullYear(new Date().getFullYear() + 1)
-          ), // 1 year from today
+          ),
           rent: property.pricePerMonth,
           deposit: property.securityDeposit,
           property: {
@@ -136,8 +120,7 @@ export const createApplication = async (
         },
       });
 
-      // Then create application with lease connection
-      const application = await prisma.application.create({
+      const application = await tx.application.create({
         data: {
           applicationDate: new Date(applicationDate),
           status,
@@ -179,8 +162,18 @@ export const updateApplicationStatus = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
+
+    if (!id || typeof id !== "string" || isNaN(Number(id))) {
+      res.status(400).json({ message: "Invalid application id" });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
     const { status } = req.body;
-    console.log("status:", status);
 
     const application = await prisma.application.findUnique({
       where: { id: Number(id) },
@@ -192,6 +185,14 @@ export const updateApplicationStatus = async (
 
     if (!application) {
       res.status(404).json({ message: "Application not found." });
+      return;
+    }
+
+    if (
+      req.user.role !== "manager" ||
+      application.property.managerCognitoId !== req.user.id
+    ) {
+      res.status(403).json({ message: "Forbidden" });
       return;
     }
 
@@ -209,7 +210,6 @@ export const updateApplicationStatus = async (
         },
       });
 
-      // Update the property to connect the tenant
       await prisma.property.update({
         where: { id: application.propertyId },
         data: {
@@ -219,25 +219,17 @@ export const updateApplicationStatus = async (
         },
       });
 
-      // Update the application with the new lease ID
       await prisma.application.update({
         where: { id: Number(id) },
         data: { status, leaseId: newLease.id },
-        include: {
-          property: true,
-          tenant: true,
-          lease: true,
-        },
       });
     } else {
-      // Update the application status (for both "Denied" and other statuses)
       await prisma.application.update({
         where: { id: Number(id) },
         data: { status },
       });
     }
 
-    // Respond with the updated application details
     const updatedApplication = await prisma.application.findUnique({
       where: { id: Number(id) },
       include: {
