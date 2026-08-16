@@ -53,10 +53,12 @@ const Listings = () => {
 
   return (
     <div className="w-full">
-      <h3 className="text-sm px-4 py-3 font-bold sticky top-0 bg-white z-10 border-b border-gray-100">
-        {properties.length}{" "}
-        <span className="text-gray-700 font-normal">
-          Places in {filters.location}
+      <h3 className="flex items-center gap-2 text-sm px-4 py-3.5 sticky rounded-md top-0 bg-white z-10 border-b border-gray-100">
+        <span className="flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-gray-900 text-white text-xs font-bold">
+          {properties.length}
+        </span>
+        <span className="text-gray-700">
+          Places in <span className="font-semibold text-gray-900">{filters.location}</span>
         </span>
       </h3>
       <div className="p-4">

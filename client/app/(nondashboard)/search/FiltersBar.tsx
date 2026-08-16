@@ -98,17 +98,17 @@ const FiltersBar = () => {
     const bathsLabel = filters.baths === "any" ? "Any Baths" : `${filters.baths}+ bath${filters.baths === "1" ? "" : "s"}`
     const propertyTypeLabel = !filters.propertyType || filters.propertyType === "any" ? "Any Property" : filters.propertyType
 
-    const pillTrigger = "rounded-full border-gray-200 text-sm font-normal text-gray-700 shadow-none transition-colors duration-300 hover:border-gray-400 focus:ring-0 focus:ring-offset-0"
+    const pillTrigger = "rounded-full border-gray-200 bg-white text-sm font-normal text-gray-700 shadow-none transition-colors duration-300 hover:border-gray-400 focus:ring-0 focus:ring-offset-0"
 
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full py-5 gap-4">
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2"> 
                 {/* All Filters */}
                 <Button
                     variant="outline"
                     className={cn(
-                        "gap-2 rounded-full border-gray-200 text-sm font-normal text-gray-700 shadow-none transition-colors duration-300 hover:bg-gray-200 hover:border-gray-400",
+                        "gap-2 rounded-full border-gray-200 bg-white text-sm font-normal text-gray-700 shadow-none transition-colors duration-300 hover:bg-gray-100 hover:border-gray-400",
                         isFiltersFullOpen && "bg-gray-900 text-white border-gray-900 hover:bg-gray-900 hover:text-white"
                     )}
                     onClick={() => dispatch(toggleFiltersFullOpen())}
@@ -118,17 +118,17 @@ const FiltersBar = () => {
                 </Button>
 
                 {/* Search Location */}
-                <div className="flex items-center rounded-full border border-gray-200 overflow-hidden transition-colors duration-300 focus-within:border-gray-400">
+                <div className="flex items-center rounded-full border border-gray-200 bg-white overflow-hidden transition-colors duration-300 focus-within:border-gray-400">
                     <Input
                         placeholder="Search location"
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="w-40 border-0 rounded-none text-sm shadow-none focus-visible:ring-0"
+                        className="w-40 border-0 rounded-none bg-transparent text-sm shadow-none focus-visible:ring-0"
                     />
                     <Button
                         onClick={handleLocationSearch}
                         variant="ghost"
-                        className="rounded-none border-0 border-l border-gray-200 shadow-none px-3 text-gray-500 hover:bg-gray-200 hover:text-gray-900"
+                        className="rounded-none border-0 border-l border-gray-200 shadow-none px-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                     >
                         <Search className="w-4 h-4" />
                     </Button>
