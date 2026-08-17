@@ -144,6 +144,9 @@ importers:
       '@types/leaflet':
         specifier: ^1.9.22
         version: 1.9.22
+      '@types/lodash':
+        specifier: ^4.17.25
+        version: 4.17.25
       '@types/maplibre-gl':
         specifier: ^1.13.0
         version: 1.14.0
