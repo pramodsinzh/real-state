@@ -2,7 +2,7 @@
 
 A full-stack real estate rental platform built with Next.js and Express, letting managers list properties and tenants search, favorite, and apply for rentals — all with role-based dashboards, an interactive map, and a complete application-to-lease workflow.
 
-**Live demo:** [your-vercel-url-here](#)
+**Live demo:** https://rental-real-state.vercel.app
 
 ---
 
