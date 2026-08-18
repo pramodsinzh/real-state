@@ -10,6 +10,7 @@ import { Button } from './ui/button'
 import { ChangePasswordForm } from './ChangePasswordForm'
 import { useGetAuthUserQuery } from '@/state/api'
 import { Pencil, X, User } from 'lucide-react'
+import { DeleteAccountSection } from './DeleteAccountSection'
 
 const SettingsForm = ({ initialData, onSubmit, userType }: SettingsFormProps) => {
   const { data: authUser } = useGetAuthUserQuery()
@@ -114,6 +115,10 @@ const SettingsForm = ({ initialData, onSubmit, userType }: SettingsFormProps) =>
       </div>
 
       {authUser?.cognitoInfo?.hasPassword && <ChangePasswordForm />}
+      {authUser?.cognitoInfo?.hasPassword && <ChangePasswordForm />}
+      <div className="mt-6">
+        <DeleteAccountSection />
+      </div>
     </div>
   )
 }
