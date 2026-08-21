@@ -87,10 +87,10 @@ const FiltersFull = () => {
 
     const bedsLabel = localFilters.beds === "any" ? "Any Beds" : `${localFilters.beds}+ bed${localFilters.beds === "1" ? "" : "s"}`
     const bathsLabel = localFilters.baths === "any" ? "Any Baths" : `${localFilters.baths}+ bath${localFilters.baths === "1" ? "" : "s"}`
-    
+
     if (!isFiltersFullOpen) return null;
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 px-4 sm:px-6 h-full overflow-auto pb-10">
+        <div className="bg-white lg:rounded-2xl lg:border lg:border-gray-200 px-4 sm:px-6 h-full overflow-auto pb-10">
             <div className="flex flex-col space-y-7 pt-6">
 
                 {/* Location */}
@@ -148,21 +148,23 @@ const FiltersFull = () => {
                 {/* Price Range */}
                 <div>
                     <h4 className="font-semibold text-gray-900 mb-3 text-sm">Price Range (Monthly)</h4>
-                    <Slider
-                        min={0}
-                        max={10000}
-                        step={100}
-                        value={[
-                            localFilters.priceRange[0] ?? 0,
-                            localFilters.priceRange[1] ?? 10000,
-                        ]}
-                        onValueChange={(value: any) =>
-                            setLocalFilters((prev) => ({
-                                ...prev,
-                                priceRange: value as [number, number],
-                            }))
-                        }
-                    />
+                    <div className="px-1">
+                        <Slider
+                            min={0}
+                            max={10000}
+                            step={100}
+                            value={[
+                                localFilters.priceRange[0] ?? 0,
+                                localFilters.priceRange[1] ?? 10000,
+                            ]}
+                            onValueChange={(value: any) =>
+                                setLocalFilters((prev) => ({
+                                    ...prev,
+                                    priceRange: value as [number, number],
+                                }))
+                            }
+                        />
+                    </div>
                     <div className="flex justify-between mt-2 text-sm text-gray-600">
                         <span>${localFilters.priceRange[0] ?? 0}</span>
                         <span>${localFilters.priceRange[1] ?? 10000}</span>
@@ -215,21 +217,23 @@ const FiltersFull = () => {
                 {/* Square Feet */}
                 <div>
                     <h4 className="font-semibold text-gray-900 mb-3 text-sm">Square Feet</h4>
-                    <Slider
-                        min={0}
-                        max={5000}
-                        step={100}
-                        value={[
-                            localFilters.squareFeet[0] ?? 0,
-                            localFilters.squareFeet[1] ?? 5000,
-                        ]}
-                        onValueChange={(value) =>
-                            setLocalFilters((prev) => ({
-                                ...prev,
-                                squareFeet: value as [number, number],
-                            }))
-                        }
-                    />
+                    <div className="px-1">
+                        <Slider
+                            min={0}
+                            max={5000}
+                            step={100}
+                            value={[
+                                localFilters.squareFeet[0] ?? 0,
+                                localFilters.squareFeet[1] ?? 5000,
+                            ]}
+                            onValueChange={(value) =>
+                                setLocalFilters((prev) => ({
+                                    ...prev,
+                                    squareFeet: value as [number, number],
+                                }))
+                            }
+                        />
+                    </div>
                     <div className="flex justify-between mt-2 text-sm text-gray-600">
                         <span>{localFilters.squareFeet[0] ?? 0} sq ft</span>
                         <span>{localFilters.squareFeet[1] ?? 5000} sq ft</span>
@@ -281,9 +285,12 @@ const FiltersFull = () => {
                 </div>
 
                 {/* Apply and Reset buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2 sticky bottom-0 bg-white pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6 border-t border-gray-100 lg:static lg:border-0 lg:mx-0 lg:px-0">
                     <Button
-                        onClick={handleSubmit}
+                        onClick={() => {
+                            handleSubmit()
+                            if (window.innerWidth < 1024) dispatch({ type: "global/toggleFiltersFullOpen" })
+                        }}
                         className="flex-1 bg-gray-900 text-white rounded-full transition-colors duration-300 hover:bg-secondary-500"
                     >
                         Apply Filters
