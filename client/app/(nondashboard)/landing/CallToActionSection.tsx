@@ -32,12 +32,13 @@ const CallToActionSection = () => {
                         </p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4 shrink-0">
-                        <button
-                            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                            className='text-primary-700 bg-white border border-white rounded-lg px-6 py-3 font-semibold transition-colors duration-300 hover:bg-transparent hover:text-white'
+                        <Link
+                            href='/search'
+                            scroll={false}
+                            className='text-center text-primary-700 bg-white border border-white rounded-lg px-6 py-3 font-semibold transition-colors duration-300 hover:bg-transparent hover:text-white'
                         >
                             Search
-                        </button>
+                        </Link>
                         <Link
                             href='/signup'
                             scroll={false}

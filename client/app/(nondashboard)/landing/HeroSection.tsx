@@ -7,56 +7,23 @@ import { ChevronDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { NAVBAR_HEIGHT } from '@/lib/constants'
-import { useDispatch } from 'react-redux'
 import { useRouter } from 'next/navigation'
-import { setFilters } from '@/state'
 
 const HeroSection = () => {
     const shouldReduceMotion = useReducedMotion()
-    const dispatch = useDispatch()
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
 
-    const handleSearch = async () => {
+    const handleSearch = () => {
         const trimmedQuery = searchQuery.trim()
-        if (!trimmedQuery) return
 
-        try {
-            const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
-                    q: trimmedQuery,
-                    format: "json",
-                    limit: "1",
-                }).toString()}`,
-                {
-                    headers: {
-                        "Accept-Language": "en",
-                    },
-                }
-            )
-            const data = await response.json()
-
-            if (data && data.length > 0) {
-                const { lon, lat } = data[0]
-                const coordinates: [number, number] = [parseFloat(lon), parseFloat(lat)]
-
-                dispatch(
-                    setFilters({
-                        location: trimmedQuery,
-                        coordinates,
-                    })
-                )
-
-                const params = new URLSearchParams({
-                    location: trimmedQuery,
-                    lat: lat,
-                    lng: lon,
-                })
-                router.push(`/search?${params.toString()}`)
-            }
-        } catch (error) {
-            console.error("Error searching location:", error)
+        if (!trimmedQuery) {
+            router.push('/search')
+            return
         }
+
+        const params = new URLSearchParams({ location: trimmedQuery })
+        router.push(`/search?${params.toString()}`)
     }
 
     return (
@@ -101,8 +68,9 @@ const HeroSection = () => {
                             className='w-full rounded-xl sm:rounded-none sm:rounded-l-xl border-none bg-white h-12 focus-visible:ring-2 focus-visible:ring-secondary-500'
                         />
                         <Button
+                            type="button"
                             onClick={handleSearch}
-                            className="bg-secondary-500 text-white rounded-xl sm:rounded-none sm:rounded-r-xl border-none hover:bg-secondary-600 transition-colors duration-300 h-12 mt-2 sm:mt-0"
+                            className="bg-secondary-500 text-white rounded-xl sm:rounded-none sm:rounded-r-xl border-none hover:bg-secondary-600 transition-colors duration-300 h-12 mt-2 sm:mt-0 px-6"
                         >
                             Search
                         </Button>
