@@ -1,6 +1,7 @@
 'use client'
 
 import Navbar from '@/components/Navbar'
+import Loading from '@/components/Loading'
 import { NAVBAR_HEIGHT } from '@/lib/constants'
 import { useGetAuthUserQuery } from '@/state/api'
 import { usePathname, useRouter } from 'next/navigation'
@@ -29,7 +30,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     setIsLoading(false)
   }, [authUser, authLoading, pathname, router])
 
-  if (authLoading || isLoading) return <>loading...</>
+  if (authLoading || isLoading) return <Loading fullScreen />
 
   return (
     <div className='h-full w-full'>

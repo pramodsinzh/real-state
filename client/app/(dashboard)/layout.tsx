@@ -1,6 +1,7 @@
 "use client"
 
 import Navbar from '@/components/Navbar'
+import Loading from '@/components/Loading'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import Sidebar from '@/components/AppSidebar'
 import { NAVBAR_HEIGHT } from '@/lib/constants'
@@ -30,7 +31,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             }
         }
     }, [authUser, pathname, router])
-    if (authLoading || isLoading) return <>loading...</>
+    if (authLoading || isLoading) return <Loading fullScreen />
     if (!authUser?.userRole) return null
 
     return (

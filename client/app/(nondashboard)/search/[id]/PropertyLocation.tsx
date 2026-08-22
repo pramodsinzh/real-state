@@ -1,6 +1,8 @@
 "use client";
 
 import { useGetPropertyQuery } from "@/state/api";
+import Loading from "@/components/Loading";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Compass, MapPin } from "lucide-react";
 import dynamic from "next/dynamic"; 
 
@@ -14,8 +16,9 @@ const LocationMapView = dynamic<LocationMapViewProps>(
     {
         ssr: false,
         loading: () => (
-            <div className="mt-4 h-[300px] rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-                Loading map...
+            <div className="mt-4 h-[300px] rounded-lg bg-gray-100 flex flex-col items-center justify-center gap-3">
+                <LoadingSpinner size={24} />
+                <span className="text-sm text-gray-500">Loading map...</span>
             </div>
         ),
     }
@@ -28,7 +31,13 @@ const PropertyLocation = ({ propertyId }: PropertyDetailsProps) => {
         isLoading,
     } = useGetPropertyQuery(propertyId);
 
-    if (isLoading) return <>Loading...</>;
+    if (isLoading) {
+        return (
+            <div className="relative w-full min-h-[200px] py-16">
+                <Loading />
+            </div>
+        );
+    }
     if (isError || !property) {
         return <>Property not Found</>;
     }

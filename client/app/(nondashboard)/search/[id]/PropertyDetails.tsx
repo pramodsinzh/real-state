@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AmenityIcons, HighlightIcons } from "@/lib/constants";
 import { formatEnumString } from "@/lib/utils";
 import { useGetPropertyQuery } from "@/state/api";
+import Loading from "@/components/Loading";
 import { HelpCircle, PawPrint, Car } from "lucide-react";
 import React from "react";
 
@@ -12,7 +13,13 @@ const PropertyDetails = ({ propertyId }: PropertyDetailsProps) => {
         isLoading,
     } = useGetPropertyQuery(propertyId);
 
-    if (isLoading) return <>Loading...</>;
+    if (isLoading) {
+        return (
+            <div className="relative w-full min-h-[200px]">
+                <Loading />
+            </div>
+        );
+    }
     if (isError || !property) {
         return <>Property not Found</>;
     }
