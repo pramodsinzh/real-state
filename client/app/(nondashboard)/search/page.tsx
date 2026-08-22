@@ -2,57 +2,130 @@
 
 import { NAVBAR_HEIGHT } from '@/lib/constants'
 import { useAppDispatch, useAppSelector } from '@/state/redux'
-import { useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import FiltersBar from './FiltersBar'
 import FiltersFull from './FiltersFull'
 import { useEffect } from 'react'
 import { cleanParams } from '@/lib/utils'
-import { setFilters, toggleFiltersFullOpen } from '@/state'
+import { FiltersState, setFilters, toggleFiltersFullOpen } from '@/state'
 import Map from './Map'
 import Listings from './Listings'
-import { X } from 'lucide-react'
 
+async function geocodeLocation(location: string): Promise<[number, number] | null> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
+        q: location,
+        format: "json",
+        limit: "1",
+      }).toString()}`,
+      {
+        headers: {
+          "Accept-Language": "en",
+        },
+      }
+    )
+    const data = await response.json()
+    if (data?.[0]) {
+      return [parseFloat(data[0].lon), parseFloat(data[0].lat)]
+    }
+  } catch (error) {
+    console.error("Error geocoding location:", error)
+  }
+  return null
+}
 
 const SearchPage = () => {
   const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
   const dispatch = useAppDispatch()
   const isFiltersFullOpen = useAppSelector((state) => state.global.isFiltersFullOpen)
 
   useEffect(() => {
-    const initialFilters = Array.from(searchParams.entries()).reduce(
-      (acc: any, [key, value]) => {
-        if (key === "priceRange" || key === "squareFeet") {
-          acc[key] = value.split(",").map((v) => (v === "" ? null : Number(v)));
-        } else if (key === "coordinates") {
-          acc[key] = value.split(",").map(Number);
-        } else {
-          acc[key] = value === "any" ? null : value;
+    let cancelled = false
+
+    const hydrateFromQuery = async () => {
+      const params = Object.fromEntries(searchParams.entries())
+      if (Object.keys(params).length === 0) return
+
+      const next: Partial<FiltersState> = {}
+
+      if (params.location) next.location = params.location
+      if (params.beds) next.beds = params.beds
+      if (params.baths) next.baths = params.baths
+      if (params.propertyType) next.propertyType = params.propertyType
+      if (params.availableFrom) next.availableFrom = params.availableFrom
+
+      if (params.priceRange) {
+        next.priceRange = params.priceRange
+          .split(",")
+          .map((v) => (v === "" ? null : Number(v))) as [number, number] | [null, null]
+      }
+
+      if (params.squareFeet) {
+        next.squareFeet = params.squareFeet
+          .split(",")
+          .map((v) => (v === "" ? null : Number(v))) as [number, number] | [null, null]
+      }
+
+      if (params.amenities) {
+        next.amenities = params.amenities.split(",").filter(Boolean)
+      }
+
+      if (params.coordinates) {
+        const [lng, lat] = params.coordinates.split(",").map(Number)
+        if (!Number.isNaN(lng) && !Number.isNaN(lat)) {
+          next.coordinates = [lng, lat]
         }
+      } else if (params.lat && params.lng) {
+        const lat = Number(params.lat)
+        const lng = Number(params.lng)
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+          next.coordinates = [lng, lat]
+        }
+      } else if (params.location) {
+        const coords = await geocodeLocation(params.location)
+        if (coords) next.coordinates = coords
+      }
 
-        return acc;
-      },
-      {}
-    );
+      if (cancelled || Object.keys(next).length === 0) return
 
-    const cleanedFilters = cleanParams(initialFilters);
-    dispatch(setFilters(cleanedFilters));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+      const cleaned = cleanParams(next)
+      dispatch(setFilters(cleaned))
+
+      // Normalize URL to include coordinates when we resolved them from location-only query
+      if (next.coordinates && !params.coordinates) {
+        const updated = new URLSearchParams(searchParams.toString())
+        updated.delete("lat")
+        updated.delete("lng")
+        updated.set("coordinates", next.coordinates.join(","))
+        if (next.location) updated.set("location", next.location)
+        router.replace(`${pathname}?${updated.toString()}`, { scroll: false })
+      }
+    }
+
+    hydrateFromQuery()
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, dispatch, pathname, router])
 
   return (
-    <div className='w-full mx-auto px-3 sm:px-5 flex flex-col'
-      style={{
-        height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
-      }}>
+    <div
+      className="w-full mx-auto px-3 sm:px-5 flex flex-col md:h-[calc(100vh-var(--navbar-h))] md:overflow-hidden"
+      style={{ ["--navbar-h" as string]: `${NAVBAR_HEIGHT}px` }}
+    >
       <FiltersBar />
 
-      <div className="relative flex-1 min-h-0">
-        <div className="flex flex-col lg:flex-row h-full gap-3 mb-5 min-h-0">
-          {/* Map + Listings stack on mobile, sit side by side on desktop */}
-          <div className="flex flex-col md:flex-row flex-1 gap-3 min-h-0 order-2 lg:order-1">
-            <div className="h-[300px] md:h-full md:flex-1 min-h-0">
+      <div className="relative flex flex-col flex-1 md:min-h-0">
+        <div className="flex flex-col lg:flex-row flex-1 gap-3 mb-5 md:min-h-0 md:overflow-hidden">
+          {/* Map + Listings: stack on mobile (page scrolls), side-by-side on desktop */}
+          <div className="flex flex-col md:flex-row flex-1 gap-3 md:min-h-0 order-2 lg:order-1">
+            <div className="h-[320px] w-full shrink-0 md:h-full md:flex-1 md:min-h-0">
               <Map />
             </div>
-            <div className="flex-1 md:basis-5/12 md:flex-none overflow-y-auto min-h-0">
+            <div className="w-full shrink-0 md:basis-5/12 md:flex-none md:h-full md:overflow-y-auto md:min-h-0">
               <Listings />
             </div>
           </div>
@@ -61,7 +134,6 @@ const SearchPage = () => {
         {/* Full filters: inline column on desktop, full-screen overlay on mobile */}
         {isFiltersFullOpen && (
           <>
-            {/* Mobile overlay backdrop */}
             <div
               className="fixed inset-0 bg-black/40 z-40 lg:hidden"
               onClick={() => dispatch(toggleFiltersFullOpen())}
@@ -74,15 +146,6 @@ const SearchPage = () => {
               `}
               style={{ top: `${NAVBAR_HEIGHT}px`, paddingTop: 0 }}
             >
-              <div className="lg:hidden flex justify-end p-3 bg-white sticky top-0 z-10">
-                <button
-                  onClick={() => dispatch(toggleFiltersFullOpen())}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-300"
-                  aria-label="Close filters"
-                >
-                  <X className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
               <FiltersFull />
             </div>
           </>

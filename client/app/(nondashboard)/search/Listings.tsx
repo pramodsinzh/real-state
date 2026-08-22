@@ -9,6 +9,7 @@ import {
 } from "@/state/api";
 import { useAppSelector } from "@/state/redux";
 import Card from "@/components/Card";
+import Loading from "@/components/Loading";
 import React from "react";
 import CardCompact from "@/components/CardCompact";
 
@@ -48,8 +49,14 @@ const Listings = () => {
     }
   };
 
-  if (isLoading) return <>Loading...</>;
-  if (isError || !properties) return <div>Failed to fetch properties</div>;
+  if (isLoading) {
+    return (
+      <div className="relative w-full min-h-[280px]">
+        <Loading />
+      </div>
+    );
+  }
+  if (isError || !properties) return <div className="p-4 text-sm text-gray-500">Failed to fetch properties</div>;
 
   return (
     <div className="w-full">

@@ -2,7 +2,7 @@
 
 import { useAppSelector } from '@/state/redux'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { debounce } from 'lodash'
 import { FiltersState, setFilters, setViewMode, toggleFiltersFullOpen } from '@/state'
@@ -21,6 +21,10 @@ const FiltersBar = () => {
     const isFiltersFullOpen = useAppSelector((state) => state.global.isFiltersFullOpen)
     const viewMode = useAppSelector((state) => state.global.viewMode)
     const [searchInput, setSearchInput] = useState(filters.location)
+
+    useEffect(() => {
+        setSearchInput(filters.location)
+    }, [filters.location])
 
     const updateURL = debounce((newFilters: FiltersState) => {
         const cleanFilters = cleanParams(newFilters);
@@ -98,17 +102,17 @@ const FiltersBar = () => {
     const bathsLabel = filters.baths === "any" ? "Any Baths" : `${filters.baths}+ bath${filters.baths === "1" ? "" : "s"}`
     const propertyTypeLabel = !filters.propertyType || filters.propertyType === "any" ? "Any Property" : filters.propertyType
 
-    const pillTrigger = "rounded-full border-gray-200 bg-white text-sm font-normal text-gray-700 shadow-none transition-colors duration-300 hover:border-gray-400 focus:ring-0 focus:ring-offset-0"
+    const pillTrigger = "h-10 data-[size=default]:h-10 rounded-full border-gray-200 bg-white text-sm font-normal text-gray-700 shadow-none transition-colors duration-300 hover:border-gray-400 focus:ring-0 focus:ring-offset-0"
 
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full py-5 gap-4">
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-2"> 
+            <div className="flex flex-wrap items-center gap-2.5"> 
                 {/* All Filters */}
                 <Button
                     variant="outline"
                     className={cn(
-                        "gap-2 rounded-full border-gray-200 bg-white text-sm font-normal text-gray-700 shadow-none transition-colors duration-300 hover:bg-gray-100 hover:border-gray-400",
+                        "h-10 gap-2 rounded-full border-gray-200 bg-white text-sm font-normal text-gray-700 shadow-none transition-colors duration-300 hover:bg-gray-100 hover:border-gray-400",
                         isFiltersFullOpen && "bg-gray-900 text-white border-gray-900 hover:bg-gray-900 hover:text-white"
                     )}
                     onClick={() => dispatch(toggleFiltersFullOpen())}
@@ -118,17 +122,17 @@ const FiltersBar = () => {
                 </Button>
 
                 {/* Search Location */}
-                <div className="flex items-center rounded-full border border-gray-200 bg-white overflow-hidden transition-colors duration-300 focus-within:border-gray-400">
+                <div className="flex items-center h-10 rounded-full border border-gray-200 bg-white overflow-hidden transition-colors duration-300 focus-within:border-gray-400">
                     <Input
                         placeholder="Search location"
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="w-40 border-0 rounded-none bg-transparent text-sm shadow-none focus-visible:ring-0"
+                        className="h-full w-40 border-0 rounded-none bg-transparent text-sm shadow-none focus-visible:ring-0"
                     />
                     <Button
                         onClick={handleLocationSearch}
                         variant="ghost"
-                        className="rounded-none border-0 border-l border-gray-200 shadow-none px-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                        className="h-full rounded-none border-0 border-l border-gray-200 shadow-none px-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                     >
                         <Search className="w-4 h-4" />
                     </Button>
@@ -243,11 +247,11 @@ const FiltersBar = () => {
 
             {/* View Mode */}
             <div className="flex items-center gap-4">
-                <div className="flex border border-gray-200 rounded-full overflow-hidden">
+                <div className="flex h-10 border border-gray-200 rounded-full overflow-hidden">
                     <Button
                         variant="ghost"
                         className={cn(
-                            "px-3 py-1 rounded-none transition-colors duration-300 hover:bg-gray-900 hover:text-white",
+                            "h-full px-3 rounded-none transition-colors duration-300 hover:bg-gray-900 hover:text-white",
                             viewMode === "list" ? "bg-gray-900 text-white" : "text-gray-600"
                         )}
                         onClick={() => dispatch(setViewMode("list"))}
@@ -257,7 +261,7 @@ const FiltersBar = () => {
                     <Button
                         variant="ghost"
                         className={cn(
-                            "px-3 py-1 rounded-none transition-colors duration-300 hover:bg-gray-900 hover:text-white",
+                            "h-full px-3 rounded-none transition-colors duration-300 hover:bg-gray-900 hover:text-white",
                             viewMode === "grid" ? "bg-gray-900 text-white" : "text-gray-600"
                         )}
                         onClick={() => dispatch(setViewMode("grid"))}

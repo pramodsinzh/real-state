@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useAppSelector } from "@/state/redux";
-import { useGetPropertiesQuery } from "@/state/api"; 
+import { useGetPropertiesQuery } from "@/state/api";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface MapViewProps {
   properties: PropertyWithLocation[];
@@ -12,8 +13,9 @@ interface MapViewProps {
 const MapView = dynamic<MapViewProps>(() => import("./MapView"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[400px] md:h-full md:basis-5/12 md:grow rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-      Loading map...
+    <div className="w-full h-full rounded-xl bg-gray-100 flex flex-col items-center justify-center gap-3 border border-gray-200">
+      <LoadingSpinner size={24} />
+      <span className="text-sm text-gray-500">Loading map...</span>
     </div>
   ),
 });
@@ -26,8 +28,22 @@ const Map = () => {
     isError,
   } = useGetPropertiesQuery(filters);
 
-  if (isLoading) return <>Loading...</>;
-  if (isError || !properties) return <div>Failed to fetch properties</div>;
+  if (isLoading) {
+    return (
+      <div className="w-full h-full rounded-xl bg-gray-100 flex flex-col items-center justify-center gap-3 border border-gray-200">
+        <LoadingSpinner size={24} />
+        <span className="text-sm text-gray-500">Loading map...</span>
+      </div>
+    );
+  }
+
+  if (isError || !properties) {
+    return (
+      <div className="w-full h-full rounded-xl bg-gray-50 flex items-center justify-center border border-gray-200 text-sm text-gray-500">
+        Failed to load map
+      </div>
+    );
+  }
 
   return (
     <MapView

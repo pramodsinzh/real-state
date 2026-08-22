@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider'
 import { AmenityIcons, PropertyTypeIcons } from '@/lib/constants'
 import { cleanParams, cn, formatEnumString } from '@/lib/utils'
-import { FiltersState, initialState, setFilters } from '@/state'
+import { FiltersState, initialState, setFilters, toggleFiltersFullOpen } from '@/state'
 import { useAppSelector } from '@/state/redux'
 import { debounce } from 'lodash'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 import { useDispatch } from 'react-redux'
@@ -91,12 +91,25 @@ const FiltersFull = () => {
     if (!isFiltersFullOpen) return null;
     return (
         <div className="bg-white lg:rounded-2xl lg:border lg:border-gray-200 px-4 sm:px-6 h-full overflow-auto pb-10">
-            <div className="flex flex-col space-y-7 pt-6">
+            {/* Mobile header: title + close in one compact row */}
+            <div className="lg:hidden sticky top-0 z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-white/95 backdrop-blur-sm border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-base font-semibold text-gray-900">Filters</h3>
+                <button
+                    type="button"
+                    onClick={() => dispatch(toggleFiltersFullOpen())}
+                    className="inline-flex size-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200"
+                    aria-label="Close filters"
+                >
+                    <X className="size-5" />
+                </button>
+            </div>
+
+            <div className="flex flex-col space-y-7 pt-5 lg:pt-6">
 
                 {/* Location */}
                 <div>
                     <h4 className="font-semibold text-gray-900 mb-2.5 text-sm">Location</h4>
-                    <div className="flex items-center rounded-full border border-gray-200 overflow-hidden transition-colors duration-300 focus-within:border-gray-400">
+                    <div className="flex items-center h-11 rounded-full border border-gray-200 overflow-hidden transition-colors duration-300 focus-within:border-gray-400">
                         <Input
                             placeholder="Enter location"
                             value={localFilters.location}
@@ -106,12 +119,12 @@ const FiltersFull = () => {
                                     location: e.target.value,
                                 }))
                             }
-                            className="border-0 rounded-none text-sm shadow-none focus-visible:ring-0"
+                            className="h-full border-0 rounded-none text-sm shadow-none focus-visible:ring-0"
                         />
                         <Button
                             onClick={handleLocationSearch}
                             variant="ghost"
-                            className="rounded-none border-0 border-l border-gray-200 shadow-none px-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                            className="h-full rounded-none border-0 border-l border-gray-200 shadow-none px-3 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                         >
                             <Search className="w-4 h-4" />
                         </Button>
@@ -181,7 +194,7 @@ const FiltersFull = () => {
                                 setLocalFilters((prev) => ({ ...prev, beds: value ?? "any" }))
                             }
                         >
-                            <SelectTrigger className="w-full rounded-xl border-gray-200">
+                            <SelectTrigger className="w-full h-11 data-[size=default]:h-11 rounded-xl border-gray-200">
                                 <SelectValue>{bedsLabel}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
@@ -201,7 +214,7 @@ const FiltersFull = () => {
                                 setLocalFilters((prev) => ({ ...prev, baths: value ?? "any" }))
                             }
                         >
-                            <SelectTrigger className="w-full rounded-xl border-gray-200">
+                            <SelectTrigger className="w-full h-11 data-[size=default]:h-11 rounded-xl border-gray-200">
                                 <SelectValue>{bathsLabel}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
@@ -280,28 +293,29 @@ const FiltersFull = () => {
                                 availableFrom: e.target.value ? e.target.value : "any",
                             }))
                         }
-                        className="rounded-xl border-gray-200"
+                        className="h-11 rounded-xl border-gray-200"
                     />
                 </div>
 
                 {/* Apply and Reset buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 pt-2 sticky bottom-0 bg-white pb-4 -mx-4 sm:-mx-6 px-4 sm:px-6 border-t border-gray-100 lg:static lg:border-0 lg:mx-0 lg:px-0">
-                    <Button
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 sticky bottom-0 bg-white pb-5 -mx-4 sm:-mx-6 px-4 sm:px-6 border-t border-gray-100 lg:static lg:border-0 lg:mx-0 lg:px-0 lg:pt-2 lg:pb-4">
+                    <button
+                        type="button"
                         onClick={() => {
                             handleSubmit()
-                            if (window.innerWidth < 1024) dispatch({ type: "global/toggleFiltersFullOpen" })
+                            if (window.innerWidth < 1024) dispatch(toggleFiltersFullOpen())
                         }}
-                        className="flex-1 bg-gray-900 text-white rounded-full transition-colors duration-300 hover:bg-secondary-500"
+                        className="flex-1 min-h-12 h-12 px-5 text-sm font-medium bg-gray-900 text-white rounded-full transition-colors duration-300 hover:bg-secondary-500"
                     >
                         Apply Filters
-                    </Button>
-                    <Button
+                    </button>
+                    <button
+                        type="button"
                         onClick={handleReset}
-                        variant="outline"
-                        className="flex-1 rounded-full border-gray-200 transition-colors duration-300 hover:bg-gray-50"
+                        className="flex-1 min-h-12 h-12 px-5 text-sm font-medium rounded-full border border-gray-200 bg-white text-gray-900 transition-colors duration-300 hover:bg-gray-50"
                     >
                         Reset Filters
-                    </Button>
+                    </button>
                 </div>
             </div>
         </div>
