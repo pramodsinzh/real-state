@@ -19,34 +19,64 @@ const Card = ({
   return (
     <div className="group bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 w-full mb-5">
       <div className="relative">
-        <div className="w-full h-48 relative bg-gray-100 overflow-hidden">
-          <Image
-            src={imgSrc}
-            alt={property.name}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            onError={() => setImgSrc("/placeholder.jpg")}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-        </div>
-
-        <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
-          {property.isPetsAllowed && (
-            <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-medium px-2.5 py-1 rounded-full">
-              Pets Allowed
-            </span>
-          )}
-          {property.isParkingIncluded && (
-            <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-medium px-2.5 py-1 rounded-full">
-              Parking Included
-            </span>
-          )}
-        </div>
+        {propertyLink ? (
+          <Link
+            href={propertyLink}
+            scroll={false}
+            className="block w-full h-48 relative bg-gray-100 overflow-hidden"
+            aria-label={`View ${property.name}`}
+          >
+            <Image
+              src={imgSrc}
+              alt={property.name}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              onError={() => setImgSrc("/placeholder.jpg")}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
+              {property.isPetsAllowed && (
+                <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-medium px-2.5 py-1 rounded-full">
+                  Pets Allowed
+                </span>
+              )}
+              {property.isParkingIncluded && (
+                <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-medium px-2.5 py-1 rounded-full">
+                  Parking Included
+                </span>
+              )}
+            </div>
+          </Link>
+        ) : (
+          <div className="w-full h-48 relative bg-gray-100 overflow-hidden">
+            <Image
+              src={imgSrc}
+              alt={property.name}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              onError={() => setImgSrc("/placeholder.jpg")}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
+              {property.isPetsAllowed && (
+                <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-medium px-2.5 py-1 rounded-full">
+                  Pets Allowed
+                </span>
+              )}
+              {property.isParkingIncluded && (
+                <span className="bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-medium px-2.5 py-1 rounded-full">
+                  Parking Included
+                </span>
+              )}
+            </div>
+          </div>
+        )}
 
         {showFavoriteButton && (
           <button
-            className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full p-2 cursor-pointer transition-colors duration-300 shadow-sm"
+            className="absolute top-3 right-3 z-10 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full p-2 cursor-pointer transition-colors duration-300 shadow-sm"
             onClick={onFavoriteToggle}
           >
             <Heart
