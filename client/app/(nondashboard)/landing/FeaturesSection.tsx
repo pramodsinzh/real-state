@@ -58,7 +58,7 @@ const FeaturesSection = () => {
                                     ][index]
                                 }
                                 linkText={["Explore", "Search", "Discover"][index]}
-                                linkHref={["/explore", "/search", "/discover"][index]}
+                                linkHref="/search"
                             />
                         </motion.div>
                     ))}
