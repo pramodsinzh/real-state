@@ -10,6 +10,7 @@ import { cleanParams } from '@/lib/utils'
 import { FiltersState, setFilters, toggleFiltersFullOpen } from '@/state'
 import Map from './Map'
 import Listings from './Listings'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 async function geocodeLocation(location: string): Promise<[number, number] | null> {
   try {
@@ -41,6 +42,15 @@ const SearchPage = () => {
   const router = useRouter()
   const dispatch = useAppDispatch()
   const isFiltersFullOpen = useAppSelector((state) => state.global.isFiltersFullOpen)
+  const shouldReduceMotion = useReducedMotion()
+
+  const layoutTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { type: "spring" as const, stiffness: 260, damping: 28 }
+
+  const panelTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 0.3, ease: [0.4, 0, 0.2, 1] as const }
 
   useEffect(() => {
     let cancelled = false
@@ -119,37 +129,72 @@ const SearchPage = () => {
       <FiltersBar />
 
       <div className="relative flex flex-col flex-1 md:min-h-0">
-        <div className="flex flex-col lg:flex-row flex-1 gap-3 mb-5 md:min-h-0 md:overflow-hidden">
-          {/* Map + Listings: stack on mobile (page scrolls), side-by-side on desktop */}
-          <div className="flex flex-col md:flex-row flex-1 gap-3 md:min-h-0 order-2 lg:order-1">
+        <div
+          className={`flex flex-col lg:flex-row flex-1 mb-5 md:min-h-0 md:overflow-hidden transition-[gap] duration-300 ${isFiltersFullOpen ? "lg:gap-3" : "lg:gap-0"}`}
+        >
+          {/* Desktop: filter sidebar slides open, map/listings shift right */}
+          <motion.div
+            className="hidden lg:block overflow-hidden shrink-0 h-full"
+            initial={false}
+            animate={{ width: isFiltersFullOpen ? "25%" : 0 }}
+            transition={layoutTransition}
+          >
+            <AnimatePresence mode="wait">
+              {isFiltersFullOpen && (
+                <motion.div
+                  key="filters-desktop"
+                  className="h-full overflow-y-auto min-w-[260px]"
+                  initial={shouldReduceMotion ? false : { opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={shouldReduceMotion ? undefined : { opacity: 0, x: -20 }}
+                  transition={panelTransition}
+                >
+                  <FiltersFull />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Mobile: filter overlay slides in from left */}
+          <AnimatePresence>
+            {isFiltersFullOpen && (
+              <>
+                <motion.div
+                  className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={panelTransition}
+                  onClick={() => dispatch(toggleFiltersFullOpen())}
+                />
+                <motion.div
+                  className="fixed inset-y-0 left-0 z-50 w-full sm:w-96 overflow-auto lg:hidden"
+                  style={{ top: `${NAVBAR_HEIGHT}px` }}
+                  initial={shouldReduceMotion ? false : { x: "-100%" }}
+                  animate={{ x: 0 }}
+                  exit={shouldReduceMotion ? undefined : { x: "-100%" }}
+                  transition={panelTransition}
+                >
+                  <FiltersFull />
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
+          {/* Map + Listings */}
+          <motion.div
+            layout={!shouldReduceMotion}
+            className="flex flex-col md:flex-row flex-1 gap-3 md:min-h-0 min-w-0"
+            transition={layoutTransition}
+          >
             <div className="h-[320px] w-full shrink-0 md:h-full md:flex-1 md:min-h-0">
               <Map />
             </div>
             <div className="w-full shrink-0 md:basis-5/12 md:flex-none md:h-full md:overflow-y-auto md:min-h-0">
               <Listings />
             </div>
-          </div>
+          </motion.div>
         </div>
-
-        {/* Full filters: inline column on desktop, full-screen overlay on mobile */}
-        {isFiltersFullOpen && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-              onClick={() => dispatch(toggleFiltersFullOpen())}
-            />
-            <div
-              className={`
-                fixed inset-y-0 left-0 z-50 w-full sm:w-96 overflow-auto
-                lg:static lg:z-auto lg:w-3/12 lg:h-full lg:mb-5
-                transition-transform duration-300 ease-in-out
-              `}
-              style={{ top: `${NAVBAR_HEIGHT}px`, paddingTop: 0 }}
-            >
-              <FiltersFull />
-            </div>
-          </>
-        )}
       </div>
     </div>
   )
