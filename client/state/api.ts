@@ -2,7 +2,7 @@ import { Application, Lease, Manager, Payment, Property, Tenant } from "@/types/
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react"
 import { getSession } from "next-auth/react"
 import { FiltersState } from "."
-import { cleanParams, withToast } from "@/lib/utils"
+import { cleanParams, createNewUserInDatabase, withToast } from "@/lib/utils"
 
 export const api = createApi({
   baseQuery: fetchBaseQuery({
@@ -41,9 +41,22 @@ export const api = createApi({
           const { id, role, name, email } = session.user
 
           const endpoint = role === "manager" ? `/managers/${id}` : `/tenants/${id}`
-          const userDetailsResponse = await fetchWithBQ(endpoint)
+          let userDetailsResponse = await fetchWithBQ(endpoint)
 
-          if (userDetailsResponse.error) {
+          // User may be authenticated but missing a Tenant/Manager row (e.g. first login).
+          // Create it, then retry the lookup.
+          if (userDetailsResponse.error && (userDetailsResponse.error as any).status === 404) {
+            userDetailsResponse = await createNewUserInDatabase(
+              { userId: id, username: name },
+              { payload: { email } },
+              role,
+              fetchWithBQ
+            )
+
+            if (userDetailsResponse.error) {
+              return { error: userDetailsResponse.error }
+            }
+          } else if (userDetailsResponse.error) {
             return { error: userDetailsResponse.error }
           }
 
