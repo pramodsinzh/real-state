@@ -122,8 +122,10 @@ PORT=3002
 **`client/.env`**
 
 ```env
-DATABASE_URL=postgresql://user:password@host:port/dbname
+DATABASE_URL=postgresql://user:password@host:port/dbname?sslmode=require
 AUTH_SECRET=your_random_secret
+AUTH_URL=http://localhost:3000
+AUTH_TRUST_HOST=true
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 JWT_SECRET=your_random_secret  # must match server's exactly
@@ -131,6 +133,48 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3002
 ```
 
 > `JWT_SECRET` must be identical on both client and server — it's how the client's minted tokens are verified by the Express API.
+> `DATABASE_URL` must be the **same Neon database** for both Vercel (client) and Render (server).
+
+### Production deploy checklist (Vercel + Render + Neon)
+
+**1. Neon**
+- Create/use one Neon database
+- Prefer the **pooled** connection string (`-pooler` host) for serverless
+- Enable PostGIS: `CREATE EXTENSION IF NOT EXISTS postgis;`
+- Run migrations against Neon from your machine:
+  ```bash
+  cd server
+  # set DATABASE_URL to Neon temporarily
+  npx prisma migrate deploy
+  ```
+
+**2. Render (Express API)**
+```env
+DATABASE_URL=<same Neon pooled URL>
+JWT_SECRET=<strong random secret>
+FRONTEND_URL=https://your-app.vercel.app
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+PORT=10000
+```
+
+**3. Vercel (Next.js) — all as Config (not Secret) for NEXT_PUBLIC_*)**
+```env
+DATABASE_URL=<same Neon pooled URL>
+AUTH_SECRET=<npx auth secret>
+AUTH_URL=https://your-app.vercel.app
+AUTH_TRUST_HOST=true
+JWT_SECRET=<exactly the same value as Render>
+NEXT_PUBLIC_SERVER_URL=https://your-api.onrender.com
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+**4. Google OAuth**
+- Add authorized redirect URI: `https://your-app.vercel.app/api/auth/callback/google`
+
+**5. Redeploy** both Vercel and Render after saving env vars.
 
 ### 4. Run migrations
 
