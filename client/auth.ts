@@ -8,6 +8,8 @@ import authConfig from "@/auth.config"
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
+  // JWT sessions + Credentials require this; Google still works with the adapter.
+  session: { strategy: "jwt" },
   providers: [
     ...authConfig.providers.filter((p) => p.id !== "credentials"),
     Credentials({

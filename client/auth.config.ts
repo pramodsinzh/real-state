@@ -2,24 +2,36 @@ import type { NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from "next-auth/providers/google"
 
-export default {
-  providers: [
+const providers: NextAuthConfig["providers"] = [
+  Credentials({
+    name: "Credentials",
+    credentials: {
+      email: { label: "Email", type: "email" },
+      password: { label: "Password", type: "password" },
+    },
+    authorize: async () => null,
+  }),
+]
+
+// Only register Google when both env vars exist — missing values cause
+ // /api/auth/error?error=Configuration on Vercel.
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  providers.unshift(
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-    Credentials({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      authorize: async () => null,
-    }),
-  ],
+    })
+  )
+}
+
+export default {
+  providers,
+  trustHost: true,
+  secret: process.env.AUTH_SECRET,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/signin",
+    error: "/signin",
   },
   callbacks: {
     async jwt({ token, user, trigger, session }) {

@@ -15,6 +15,8 @@ type FieldErrors = Partial<Record<"email" | "password", string>>
 
 function getOAuthErrorMessage(error: string | null): string {
   switch (error) {
+    case "Configuration":
+      return "Auth is misconfigured. On Vercel, set AUTH_SECRET, AUTH_URL, GOOGLE_CLIENT_ID, and GOOGLE_CLIENT_SECRET, then redeploy."
     case "OAuthAccountNotLinked":
       return "An account already exists with this email. Please sign in with your password instead."
     case "AccessDenied":
