@@ -188,28 +188,33 @@ export const createProperty = async (req: AuthenticatedRequest, res: Response): 
       })
     )
 
+    const geocodeQuery = [address, city, state, postalCode, country]
+      .filter(Boolean)
+      .join(", ")
+
     const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
-      street: address,
-      city,
-      country,
-      postalcode: postalCode,
+      q: geocodeQuery,
       format: "json",
       limit: "1",
     }).toString()}`
 
     const geocodingResponse = await axios.get(geocodingUrl, {
       headers: {
-        "User-Agent": "RealEstateApp (justsomedummyemail@gmail.com",
+        "User-Agent": "RentifulRealEstateApp/1.0 (contact@rentiful.app)",
+        "Accept-Language": "en",
       },
     })
 
-    const [longitude, latitude] =
-      geocodingResponse.data[0]?.lon && geocodingResponse.data[0]?.lat
-        ? [
-          parseFloat(geocodingResponse.data[0]?.lon),
-          parseFloat(geocodingResponse.data[0]?.lat),
-        ]
-        : [0, 0]
+    const result = geocodingResponse.data?.[0]
+    if (!result?.lon || !result?.lat) {
+      res.status(400).json({
+        message: `Could not find coordinates for "${geocodeQuery}". Check the address and try again.`,
+      })
+      return
+    }
+
+    const longitude = parseFloat(result.lon)
+    const latitude = parseFloat(result.lat)
 
     const [location] = await prisma.$queryRaw<Location[]>`
       INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
