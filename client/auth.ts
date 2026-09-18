@@ -3,7 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import prisma from "@/lib/prisma"
-import authConfig from "@/auth.config"
+import authConfig, { googleProvider } from "@/auth.config"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -11,7 +11,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // JWT sessions + Credentials require this; Google still works with the adapter.
   session: { strategy: "jwt" },
   providers: [
-    ...authConfig.providers.filter((p) => p.id !== "credentials"),
+    ...(googleProvider ? [googleProvider] : []),
     Credentials({
       name: "Credentials",
       credentials: {
