@@ -77,14 +77,14 @@ export const getProperties = async (req: AuthenticatedRequest, res: Response): P
     if (latitude && longitude) {
       const lat = parseFloat(latitude as string)
       const lng = parseFloat(longitude as string)
-      const radiusInKilometers = 1000
-      const degrees = radiusInKilometers / 111
+      // ~500km radius using true geographic meters (not degrees)
+      const radiusInMeters = 500_000
 
       whereConditions.push(
         Prisma.sql`ST_DWithin(
-          l.coordinates::geometry,
-          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326),
-          ${degrees}
+          l.coordinates::geography,
+          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography,
+          ${radiusInMeters}
         )`
       )
     }
