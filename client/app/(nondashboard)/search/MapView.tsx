@@ -61,7 +61,7 @@ function RecenterMap({ center }: { center: [number, number] }) {
   const map = useMap();
 
   useEffect(() => {
-    map.setView([center[1], center[0]], 9, { animate: true });
+    map.setView([center[1], center[0]], 7, { animate: true });
   }, [map, center]);
 
   return null;
@@ -74,7 +74,7 @@ const MapView = ({ properties, center }: MapViewProps) => {
     <div className="w-full h-full relative z-0 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
       <MapContainer
         center={leafletCenter}
-        zoom={9}
+        zoom={7}
         scrollWheelZoom
         style={{ height: "100%", width: "100%" }}
       >
