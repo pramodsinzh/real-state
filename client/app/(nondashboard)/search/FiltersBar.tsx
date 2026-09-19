@@ -55,7 +55,7 @@ const FiltersBar = () => {
             }
             newValue = currentArrayRange;
         } else if (key === "coordinates") {
-            newValue = value === "any" ? [0, 0] : value.map(Number);
+            newValue = value === "any" || value == null ? null : value.map(Number);
         } else {
             newValue = value === "any" ? "any" : value;
         }
@@ -66,7 +66,12 @@ const FiltersBar = () => {
     };
 
     const handleLocationSearch = async () => {
-        if (!searchInput) return;
+        if (!searchInput.trim()) {
+            const cleared = { ...filters, location: "", coordinates: null };
+            dispatch(setFilters(cleared));
+            updateURL(cleared);
+            return;
+        }
 
         try {
             const response = await fetch(
@@ -124,10 +129,10 @@ const FiltersBar = () => {
                 {/* Search Location */}
                 <div className="flex items-center h-10 rounded-full border border-gray-200 bg-white overflow-hidden transition-colors duration-300 focus-within:border-gray-400">
                     <Input
-                        placeholder="Search location"
+                        placeholder="Search location (or clear for all)"
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="h-full w-40 border-0 rounded-none bg-transparent text-sm shadow-none focus-visible:ring-0"
+                        className="h-full w-48 border-0 rounded-none bg-transparent text-sm shadow-none focus-visible:ring-0"
                     />
                     <Button
                         onClick={handleLocationSearch}

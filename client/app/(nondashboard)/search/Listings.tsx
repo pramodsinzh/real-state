@@ -65,7 +65,13 @@ const Listings = () => {
           {properties.length}
         </span>
         <span className="text-gray-700">
-          Places in <span className="font-semibold text-gray-900">{filters.location}</span>
+          {filters.location ? (
+            <>
+              Places in <span className="font-semibold text-gray-900">{filters.location}</span>
+            </>
+          ) : (
+            <span className="font-semibold text-gray-900">places available</span>
+          )}
         </span>
       </h3>
       <div className="p-4">

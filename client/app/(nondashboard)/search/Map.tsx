@@ -48,7 +48,7 @@ const Map = () => {
   return (
     <MapView
       properties={properties}
-      center={filters.coordinates || [-74.5, 40]}
+      center={filters.coordinates || [-118.25, 34.05]}
     />
   );
 };
