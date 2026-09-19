@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -31,31 +31,6 @@ const markerIcon = L.divIcon({
   popupAnchor: [0, -38],
 });
 
-/** Nudge markers that share the same lat/lng so they don't stack as one pin. */
-function withSpreadCoordinates(properties: PropertyWithLocation[]) {
-  const seen = new Map<string, number>();
-
-  return properties.map((property) => {
-    const lat = property.location?.coordinates?.latitude;
-    const lng = property.location?.coordinates?.longitude;
-
-    if (typeof lat !== "number" || typeof lng !== "number" || Number.isNaN(lat) || Number.isNaN(lng)) {
-      return { property, position: null as [number, number] | null };
-    }
-
-    const key = `${lat.toFixed(5)},${lng.toFixed(5)}`;
-    const count = seen.get(key) ?? 0;
-    seen.set(key, count + 1);
-
-    // ~11m offset per duplicate so stacked listings remain clickable
-    const offset = count * 0.0001;
-    return {
-      property,
-      position: [lat + offset, lng + offset] as [number, number],
-    };
-  });
-}
-
 function MapResizeHandler() {
   const map = useMap();
 
@@ -82,31 +57,18 @@ function MapResizeHandler() {
   return null;
 }
 
-function FitBounds({ positions }: { positions: [number, number][] }) {
+function RecenterMap({ center }: { center: [number, number] }) {
   const map = useMap();
 
   useEffect(() => {
-    if (positions.length === 0) return;
-
-    if (positions.length === 1) {
-      map.setView(positions[0], 12, { animate: true });
-      return;
-    }
-
-    const bounds = L.latLngBounds(positions);
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13, animate: true });
-  }, [map, positions]);
+    map.setView([center[1], center[0]], 9, { animate: true });
+  }, [map, center]);
 
   return null;
 }
 
 const MapView = ({ properties, center }: MapViewProps) => {
   const leafletCenter: [number, number] = [center[1], center[0]];
-  const markers = useMemo(() => withSpreadCoordinates(properties), [properties]);
-  const positions = useMemo(
-    () => markers.flatMap((m) => (m.position ? [m.position] : [])),
-    [markers]
-  );
 
   return (
     <div className="w-full h-full relative z-0 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
@@ -117,16 +79,20 @@ const MapView = ({ properties, center }: MapViewProps) => {
         style={{ height: "100%", width: "100%" }}
       >
         <MapResizeHandler />
-        <FitBounds positions={positions} />
+        <RecenterMap center={center} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {markers.map(({ property, position }) =>
-          position ? (
+        {properties.map((property) => {
+          const lat = property.location?.coordinates?.latitude;
+          const lng = property.location?.coordinates?.longitude;
+          if (typeof lat !== "number" || typeof lng !== "number") return null;
+
+          return (
             <Marker
               key={property.id}
-              position={position}
+              position={[lat, lng]}
               icon={markerIcon}
             >
               <Popup className="property-popup" minWidth={190} closeButton>
@@ -157,8 +123,8 @@ const MapView = ({ properties, center }: MapViewProps) => {
                 </Link>
               </Popup>
             </Marker>
-          ) : null
-        )}
+          );
+        })}
       </MapContainer>
     </div>
   );
