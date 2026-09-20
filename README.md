@@ -9,13 +9,14 @@ A full-stack real estate rental platform built with Next.js and Express, letting
 ## Features
 
 - 🔐 **Authentication** — Email/password and Google OAuth sign-in via NextAuth, with role-based onboarding (Manager / Tenant)
-- 🏘️ **Property listings** — Full CRUD for managers, with multi-image upload, amenities, highlights, and geocoded addresses
+- 🏘️ **Property listings** — Managers create, edit, and delete listings from the dashboard (photos, fees, amenities, highlights, and geocoded addresses) without touching the database
 - 🔍 **Search & filters** — Location search, price range, beds/baths, property type, amenities, and square footage filters with URL-synced state
 - 🗺️ **Interactive map** — Property locations rendered with React Leaflet and OpenStreetMap, including a themed popup preview
 - ❤️ **Favorites** — Tenants can save and manage favorite properties
 - 📝 **Applications & leases** — Tenants apply to properties; managers review, approve, or deny applications, which automatically generates a lease on approval
 - 💳 **Tenant dashboard** — Current residences, billing history, and account settings
-- 📊 **Manager dashboard** — Property management, tenant/application overview, and per-property lease tracking
+- 📊 **Manager dashboard** — Property management, per-property tenant/lease tracking, and application review
+- ⚙️ **Account settings** — Profile updates, password change, and account deletion
 - 🎨 **Responsive, polished UI** — Built with Tailwind CSS v4 and shadcn/ui components throughout
 
 ---
@@ -41,8 +42,8 @@ A full-stack real estate rental platform built with Next.js and Express, letting
 - **Geocoding:** Nominatim (OpenStreetMap)
 
 ### Infrastructure
-- **Database hosting:** Railway (PostgreSQL + PostGIS)
-- **API hosting:** Railway
+- **Database:** Neon (PostgreSQL + PostGIS)
+- **API hosting:** Render
 - **Frontend hosting:** Vercel
 
 ---
@@ -55,22 +56,28 @@ real-state/
 │   ├── app/
 │   │   ├── (auth)/         # Sign in / sign up pages
 │   │   ├── (dashboard)/    # Manager & tenant dashboards
-│   │   ├── (nondashboard)/ # Landing, search, property listing pages
-│   │   ├── api/            # NextAuth, token minting, signup routes
+│   │   │   ├── managers/
+│   │   │   │   ├── properties/          # List, tenants, edit/delete
+│   │   │   │   ├── newproperty/         # Create listing
+│   │   │   │   ├── applications/
+│   │   │   │   └── settings/
+│   │   │   └── tenants/    # Favorites, applications, residences, settings
+│   │   ├── (nondashboard)/ # Landing, search, public property pages
+│   │   ├── api/            # NextAuth, JWT minting, signup, onboarding, account
 │   │   └── onboarding/     # Post-signup role selection
 │   ├── components/         # Shared UI components
-│   ├── lib/                 # Utilities, Zod schemas, Prisma client
-│   ├── prisma/              # Client-side Prisma schema (auth tables)
-│   ├── state/               # Redux slices + RTK Query API
-│   └── types/                # Global TypeScript types
+│   ├── lib/                # Utilities, Zod schemas, Prisma client
+│   ├── prisma/             # Client-side Prisma schema (auth tables)
+│   ├── state/              # Redux slices + RTK Query API
+│   └── types/              # Global TypeScript types
 │
 └── server/                 # Express backend
     ├── src/
-    │   ├── controllers/     # Route handlers
-    │   ├── middleware/       # JWT auth middleware
-    │   ├── routes/            # Express routers
-    │   └── lib/                # Prisma client singleton
-    └── prisma/                # Database schema & migrations
+    │   ├── controllers/    # Route handlers (properties include PUT/DELETE)
+    │   ├── middleware/     # JWT auth middleware
+    │   ├── routes/         # Express routers
+    │   └── lib/            # Prisma client singleton
+    └── prisma/             # Database schema, migrations, seed
 ```
 
 ---
@@ -80,7 +87,7 @@ real-state/
 ### Prerequisites
 - Node.js 18+
 - pnpm (recommended) or npm
-- A PostgreSQL database with PostGIS enabled (local via Docker, or a hosted provider)
+- A PostgreSQL database with PostGIS enabled (local, Docker, or a hosted provider)
 - A free [Cloudinary](https://cloudinary.com/) account (for image uploads)
 - A [Google Cloud](https://console.cloud.google.com/) OAuth client (for Google sign-in)
 
@@ -117,12 +124,13 @@ CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 PORT=3002
+FRONTEND_URL=http://localhost:3000
 ```
 
 **`client/.env`**
 
 ```env
-DATABASE_URL=postgresql://user:password@host:port/dbname?sslmode=require
+DATABASE_URL=postgresql://user:password@host:port/dbname
 AUTH_SECRET=your_random_secret
 AUTH_URL=http://localhost:3000
 AUTH_TRUST_HOST=true
@@ -133,7 +141,7 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3002
 ```
 
 > `JWT_SECRET` must be identical on both client and server — it's how the client's minted tokens are verified by the Express API.
-> `DATABASE_URL` must be the **same Neon database** for both Vercel (client) and Render (server).
+> For local development, point both `DATABASE_URL` values at the **same** Postgres database so NextAuth users and rental data stay in sync.
 
 ### Production deploy checklist (Vercel + Render + Neon)
 
@@ -159,7 +167,7 @@ CLOUDINARY_API_SECRET=...
 PORT=10000
 ```
 
-**3. Vercel (Next.js) — all as Config (not Secret) for NEXT_PUBLIC_*)**
+**3. Vercel (Next.js) — all as Config (not Secret for `NEXT_PUBLIC_*`)**
 ```env
 DATABASE_URL=<same Neon pooled URL>
 AUTH_SECRET=<npx auth secret>
@@ -187,6 +195,13 @@ cd ../client
 npx prisma generate
 ```
 
+Optional sample data:
+
+```bash
+cd server
+npm run seed
+```
+
 ### 5. Start the dev servers
 
 ```bash
@@ -203,10 +218,24 @@ Visit `http://localhost:3000`.
 
 ---
 
+## Manager property workflow
+
+Managers no longer need to edit listings in the database.
+
+1. Sign in as a **manager**.
+2. Open **My Properties** (or **Add New Property** from the navbar).
+3. Create a listing, or open an existing one and choose **Edit Property** (pencil on the card).
+4. Update details, keep or replace photos, then **Save Changes**.
+5. To remove a listing, use **Delete this property** and type `delete` to confirm. Related leases, payments, and applications are removed with it.
+
+Only the manager who owns the listing can update or delete it.
+
+---
+
 ## Key Architectural Notes
 
 - **Auth bridge:** Since the client (Next.js/NextAuth) and server (Express) are separate services, the client mints a short-lived JWT at `/api/auth/token` on demand, which Express verifies via custom middleware — this keeps the Express API stateless while still trusting the authenticated session.
-- **Ownership checks:** All write endpoints (favorites, applications, lease status changes, profile updates) verify the requesting user actually owns the resource being modified, not just that they're authenticated.
+- **Ownership checks:** Write endpoints (favorites, applications, lease status, profile updates, and property create/update/delete) verify the requesting user owns the resource, not just that they are authenticated.
 - **No paid APIs:** Every third-party service used (Cloudinary, Nominatim, OpenStreetMap/Leaflet, NextAuth) has a genuinely free tier with no credit card required, replacing the AWS/Mapbox stack from the original tutorial this project was built from.
 
 ---
