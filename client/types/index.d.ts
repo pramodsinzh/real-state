@@ -101,6 +101,7 @@ declare global {
     onFavoriteToggle: () => void;
     showFavoriteButton?: boolean;
     propertyLink?: string;
+    editLink?: string;
   }
 
   interface CardCompactProps {

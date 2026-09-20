@@ -30,6 +30,13 @@ export type PropertyFormInput = z.input<typeof propertySchema>;
 // Use for `onSubmit(data: ...)` — matches the coerced/validated shape after zod runs
 export type PropertyFormData = z.output<typeof propertySchema>;
 
+export const propertyUpdateSchema = propertySchema.extend({
+  photoUrls: z.array(z.instanceof(File)).optional().default([]),
+});
+
+export type PropertyUpdateFormInput = z.input<typeof propertyUpdateSchema>;
+export type PropertyUpdateFormData = z.output<typeof propertyUpdateSchema>;
+
 export const applicationSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),

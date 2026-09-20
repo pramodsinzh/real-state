@@ -1,6 +1,6 @@
 "use client"
 
-import { Bath, Bed, Heart, House, Star } from "lucide-react";
+import { Bath, Bed, Heart, House, Pencil, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -11,6 +11,7 @@ const Card = ({
   onFavoriteToggle,
   showFavoriteButton = true,
   propertyLink,
+  editLink,
 }: CardProps) => {
   const [imgSrc, setImgSrc] = useState(
     property.photoUrls?.[0] || "/placeholder.jpg"
@@ -72,6 +73,17 @@ const Card = ({
               )}
             </div>
           </div>
+        )}
+
+        {editLink && (
+          <Link
+            href={editLink}
+            scroll={false}
+            className={`absolute ${showFavoriteButton ? "top-3 left-3" : "top-3 right-3"} z-10 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full p-2 transition-colors duration-300 shadow-sm`}
+            aria-label={`Edit ${property.name}`}
+          >
+            <Pencil className="w-4 h-4 text-gray-700" />
+          </Link>
         )}
 
         {showFavoriteButton && (

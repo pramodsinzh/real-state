@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Loading from "@/components/Loading";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useGetPaymentsQuery, useGetPropertyLeasesQuery, useGetPropertyQuery } from "@/state/api";
-import { ArrowDownToLine, ArrowLeft, Check, Download } from "lucide-react";
+import { ArrowDownToLine, ArrowLeft, Check, Download, Pencil } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -107,10 +107,20 @@ const PropertyTenants = () => {
                 <span>Back to Properties</span>
             </Link>
 
-            <Header
-                title={property?.name || "My Property"}
-                subtitle="Manage tenants and leases for this property"
-            />
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <Header
+                    title={property?.name || "My Property"}
+                    subtitle="Manage tenants and leases for this property"
+                />
+                <Link
+                    href={`/managers/properties/${propertyId}/edit`}
+                    className="inline-flex items-center justify-center border border-gray-300 text-gray-700 text-sm py-2 px-4 rounded-md font-medium transition-colors duration-300 hover:bg-gray-900 hover:text-white hover:border-gray-900 sm:mt-1"
+                    scroll={false}
+                >
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Property
+                </Link>
+            </div>
 
             <div className="w-full space-y-6">
                 <div className="mt-8 bg-white rounded-xl border border-gray-200 overflow-hidden p-6">

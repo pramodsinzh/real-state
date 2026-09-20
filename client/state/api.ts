@@ -122,6 +122,43 @@ export const api = createApi({
       },
     }),
 
+    updateProperty: build.mutation<PropertyWithLocation, { id: number; body: FormData }>({
+      query: ({ id, body }) => ({
+        url: `properties/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Properties", id: "LIST" },
+        { type: "Properties", id },
+        { type: "PropertyDetails", id },
+      ],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          success: "Property updated successfully!",
+          error: "Failed to update property.",
+        });
+      },
+    }),
+
+    deleteProperty: build.mutation<{ message: string }, number>({
+      query: (id) => ({
+        url: `properties/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: "Properties", id: "LIST" },
+        { type: "Properties", id },
+        { type: "PropertyDetails", id },
+      ],
+      async onQueryStarted(_, { queryFulfilled }) {
+        await withToast(queryFulfilled, {
+          success: "Property deleted successfully!",
+          error: "Failed to delete property.",
+        });
+      },
+    }),
+
     // property related endpoints
     getProperties: build.query<PropertyWithLocation[], Partial<FiltersState> & { favoriteIds?: number[] }>({
       query: (filters) => {
@@ -331,6 +368,8 @@ export const {
   useUpdateManagerSettingsMutation,
   useGetManagerPropertiesQuery,
   useCreatePropertyMutation,
+  useUpdatePropertyMutation,
+  useDeletePropertyMutation,
   useGetPropertiesQuery,
   useGetPropertyQuery,
   useAddFavoritePropertyMutation,
