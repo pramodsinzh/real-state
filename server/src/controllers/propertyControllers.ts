@@ -1,5 +1,5 @@
 import type { Response } from "express"
-import { Prisma, type Location } from "@prisma/client"
+import { Prisma, type Amenity, type Highlight, type Location, type PropertyType } from "@prisma/client"
 import { wktToGeoJSON } from "@terraformer/wkt"
 import { v2 as cloudinary } from "cloudinary"
 import axios from "axios"
@@ -19,6 +19,98 @@ cloudinary.config({
   api_key: CLOUDINARY_API_KEY,
   api_secret: CLOUDINARY_API_SECRET,
 })
+
+const uploadPropertyPhotos = async (files: Express.Multer.File[]): Promise<string[]> => {
+  return Promise.all(
+    files.map(
+      (file) =>
+        new Promise<string>((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "rentiful/properties",
+              resource_type: "image",
+            },
+            (error, result) => {
+              if (error || !result) return reject(error)
+              resolve(result.secure_url)
+            }
+          )
+          uploadStream.end(file.buffer)
+        })
+    )
+  )
+}
+
+const geocodeAddress = async (
+  address: string,
+  city: string,
+  state: string,
+  postalCode: string,
+  country: string
+): Promise<{ longitude: number; latitude: number } | null> => {
+  const geocodeQuery = [address, city, state, postalCode, country].filter(Boolean).join(", ")
+  const geocodingUrl = `https://nominatim.openstreetmap.org/search?${new URLSearchParams({
+    q: geocodeQuery,
+    format: "json",
+    limit: "1",
+  }).toString()}`
+
+  const geocodingResponse = await axios.get(geocodingUrl, {
+    headers: {
+      "User-Agent": "RentifulRealEstateApp/1.0 (contact@rentiful.app)",
+      "Accept-Language": "en",
+    },
+  })
+
+  const result = geocodingResponse.data?.[0]
+  if (!result?.lon || !result?.lat) return null
+
+  return {
+    longitude: parseFloat(result.lon),
+    latitude: parseFloat(result.lat),
+  }
+}
+
+const parseStringList = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string")
+  if (typeof value !== "string" || !value.trim()) return []
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed)) {
+      return parsed.filter((item): item is string => typeof item === "string")
+    }
+  } catch {
+    // fall through to comma-separated parsing
+  }
+  return value.split(",").map((item) => item.trim()).filter(Boolean)
+}
+
+const parseEnumList = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.map(String)
+  if (typeof value !== "string" || !value.trim()) return []
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed)) return parsed.map(String)
+  } catch {
+    // fall through
+  }
+  return value.split(",").map((item) => item.trim()).filter(Boolean)
+}
+
+const parseOptionalBoolean = (value: unknown): boolean | undefined => {
+  if (value === undefined) return undefined
+  return value === true || value === "true"
+}
+
+const parseOptionalFloat = (value: unknown): number | undefined => {
+  if (value === undefined || value === "") return undefined
+  return parseFloat(String(value))
+}
+
+const parseOptionalInt = (value: unknown): number | undefined => {
+  if (value === undefined || value === "") return undefined
+  return parseInt(String(value), 10)
+}
 
 export const getProperties = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -258,6 +350,199 @@ export const createProperty = async (req: AuthenticatedRequest, res: Response): 
     res.status(201).json(newProperty)
   } catch (error: any) {
     res.status(500).json({ message: `Error creating property: ${error.message}` })
+  }
+}
+
+export const updateProperty = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Unauthorized" })
+      return
+    }
+
+    const { id } = req.params
+    if (!id || isNaN(Number(id))) {
+      res.status(400).json({ message: "Invalid property id" })
+      return
+    }
+
+    const propertyId = Number(id)
+    const existing = await prisma.property.findUnique({
+      where: { id: propertyId },
+      include: { location: true },
+    })
+
+    if (!existing) {
+      res.status(404).json({ message: "Property not found" })
+      return
+    }
+
+    if (existing.managerCognitoId !== req.user.id) {
+      res.status(403).json({ message: "You can only edit your own properties" })
+      return
+    }
+
+    const files = (req.files as Express.Multer.File[]) || []
+    const { address, city, state, country, postalCode, existingPhotoUrls, ...propertyData } = req.body
+
+    const uploadedPhotoUrls = await uploadPropertyPhotos(files)
+    const keptPhotoUrls = parseStringList(existingPhotoUrls)
+    const photoUrls = [...keptPhotoUrls, ...uploadedPhotoUrls]
+
+    if (photoUrls.length === 0) {
+      res.status(400).json({ message: "At least one photo is required" })
+      return
+    }
+
+    const nextAddress = address ?? existing.location.address
+    const nextCity = city ?? existing.location.city
+    const nextState = state ?? existing.location.state
+    const nextCountry = country ?? existing.location.country
+    const nextPostalCode = postalCode ?? existing.location.postalCode
+
+    const addressChanged =
+      nextAddress !== existing.location.address ||
+      nextCity !== existing.location.city ||
+      nextState !== existing.location.state ||
+      nextCountry !== existing.location.country ||
+      nextPostalCode !== existing.location.postalCode
+
+    if (addressChanged) {
+      const coords = await geocodeAddress(nextAddress, nextCity, nextState, nextPostalCode, nextCountry)
+      if (!coords) {
+        res.status(400).json({
+          message: `Could not find coordinates for the updated address. Check the address and try again.`,
+        })
+        return
+      }
+
+      await prisma.$queryRaw`
+        UPDATE "Location"
+        SET
+          address = ${nextAddress},
+          city = ${nextCity},
+          state = ${nextState},
+          country = ${nextCountry},
+          "postalCode" = ${nextPostalCode},
+          coordinates = ST_SetSRID(ST_MakePoint(${coords.longitude}, ${coords.latitude}), 4326)
+        WHERE id = ${existing.locationId}
+      `
+    }
+
+    const data: Prisma.PropertyUpdateInput = {
+      name: propertyData.name ?? existing.name,
+      description: propertyData.description ?? existing.description,
+      photoUrls: { set: photoUrls },
+    }
+
+    if (propertyData.amenities !== undefined) {
+      data.amenities = parseEnumList(propertyData.amenities) as Amenity[]
+    }
+    if (propertyData.highlights !== undefined) {
+      data.highlights = parseEnumList(propertyData.highlights) as Highlight[]
+    }
+
+    const isPetsAllowed = parseOptionalBoolean(propertyData.isPetsAllowed)
+    if (isPetsAllowed !== undefined) data.isPetsAllowed = isPetsAllowed
+
+    const isParkingIncluded = parseOptionalBoolean(propertyData.isParkingIncluded)
+    if (isParkingIncluded !== undefined) data.isParkingIncluded = isParkingIncluded
+
+    const pricePerMonth = parseOptionalFloat(propertyData.pricePerMonth)
+    if (pricePerMonth !== undefined) data.pricePerMonth = pricePerMonth
+
+    const securityDeposit = parseOptionalFloat(propertyData.securityDeposit)
+    if (securityDeposit !== undefined) data.securityDeposit = securityDeposit
+
+    const applicationFee = parseOptionalFloat(propertyData.applicationFee)
+    if (applicationFee !== undefined) data.applicationFee = applicationFee
+
+    const beds = parseOptionalInt(propertyData.beds)
+    if (beds !== undefined) data.beds = beds
+
+    const baths = parseOptionalFloat(propertyData.baths)
+    if (baths !== undefined) data.baths = baths
+
+    const squareFeet = parseOptionalInt(propertyData.squareFeet)
+    if (squareFeet !== undefined) data.squareFeet = squareFeet
+
+    if (propertyData.propertyType) {
+      data.propertyType = propertyData.propertyType as PropertyType
+    }
+
+    const updatedProperty = await prisma.property.update({
+      where: { id: propertyId },
+      data,
+      include: {
+        location: true,
+        manager: true,
+      },
+    })
+
+    res.json(updatedProperty)
+  } catch (error: any) {
+    res.status(500).json({ message: `Error updating property: ${error.message}` })
+  }
+}
+
+export const deleteProperty = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Unauthorized" })
+      return
+    }
+
+    const { id } = req.params
+    if (!id || isNaN(Number(id))) {
+      res.status(400).json({ message: "Invalid property id" })
+      return
+    }
+
+    const propertyId = Number(id)
+    const existing = await prisma.property.findUnique({
+      where: { id: propertyId },
+    })
+
+    if (!existing) {
+      res.status(404).json({ message: "Property not found" })
+      return
+    }
+
+    if (existing.managerCognitoId !== req.user.id) {
+      res.status(403).json({ message: "You can only delete your own properties" })
+      return
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.application.updateMany({
+        where: { propertyId },
+        data: { leaseId: null },
+      })
+      await tx.payment.deleteMany({
+        where: { lease: { propertyId } },
+      })
+      await tx.application.deleteMany({ where: { propertyId } })
+      await tx.lease.deleteMany({ where: { propertyId } })
+      await tx.property.update({
+        where: { id: propertyId },
+        data: {
+          favoritedBy: { set: [] },
+          tenants: { set: [] },
+        },
+      })
+      await tx.property.delete({ where: { id: propertyId } })
+
+      const remainingAtLocation = await tx.property.count({
+        where: { locationId: existing.locationId },
+      })
+      if (remainingAtLocation === 0) {
+        await tx.$executeRaw`DELETE FROM "Location" WHERE id = ${existing.locationId}`
+      }
+    })
+
+    res.json({ message: "Property deleted successfully" })
+  } catch (error: any) {
+    res.status(500).json({ message: `Error deleting property: ${error.message}` })
   }
 }
 
